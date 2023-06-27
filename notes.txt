@@ -1,0 +1,17 @@
+Class Image:
+
+    Attributes:
+    The image
+    setup parameters (noise, blurring etc)
+
+    Methods:
+    Blur_image
+
+    Noise_image
+
+    resize_image
+
+    return_modified_image:
+        Returns modifed (noised, blurred etc) image, original image and ground truth segmentation
+
+
