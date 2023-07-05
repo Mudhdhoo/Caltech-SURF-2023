@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
 class Image:
-    def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.01, blur_std = 0.4, is_grey = 0, is_binary = 0) -> None:
+    def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.01, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
+        # Image set-up
         self.image = loadmat(os.path.join('images',image_name))[image_name]
         self.image_size = self.image.shape
         self.scale = scale
@@ -12,6 +13,10 @@ class Image:
         self.blur_std = blur_std
         self.is_grey = is_grey
         self.is_binary = is_binary
+        self.J = self.make_feature_map()
+
+        # Feature map parameters
+        self.KER = KER
 
     def blur_image(self):
         # TODO for reconstruction
@@ -24,10 +29,13 @@ class Image:
     def resize_image(self):
         pass
 
+    def make_feature_map(self):
+        pass
+
     def show(self):
         plt.imshow(self.image)
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('image')
+    im = Image('heart')
     print(im.image_size)
