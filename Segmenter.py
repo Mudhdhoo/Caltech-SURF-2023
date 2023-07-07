@@ -3,12 +3,15 @@ from Image import Image
 import matplotlib.pyplot as plt
 
 class Segmenter:
+    """
+    Segmeter class.
+    """
     def __init__(self, image: Image, delta, GL_epsilon, steps, margin_proportion, maxiterations, 
                 grad_Bhatt_MC, Bhatt_MC, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size) -> None:
         self.image = image   # The image to segment
 
         # Segmentation Parameters
-        self.u0 = self.__init_u0()     
+        self.u0 = self.init_u0()     
         self.delta = delta;     #stopping condition
         self.GL_epsilon = GL_epsilon    #4*1e-1; %1e0; %In Ginzburg--Landau
         self.steps = steps      # steps in the semi-implicit Euler scheme for the diffusion
@@ -27,7 +30,7 @@ class Segmenter:
         self.max_sparsity_seg  = max_sparsity_seg # 1e7; %Maximum entries in sparse matrix
         self.batch_size = batch_size # size of batches for batch processing
 
-    def __init_u0(self):
+    def init_u0(self):
         """
         Creates the initial segmentation of the image.
         """
@@ -42,14 +45,15 @@ class Segmenter:
         return u0
     
     def segment(self):
-        pass
+        u = self.__uupdate_MBO(self.u0)
+        return u
 
-    def __uupdate_MBO(self, verbose = False):
+    def __uupdate_MBO(self, u, verbose = False):
         """
         Implements the modified MBO scheme 
         """
         J = self.image.J
-        u = self.u0
+        u0 = u
         dt = self.GL_epsilon/self.gamma #       time for the diffusion
         a = self.gamma*self.GL_epsilon#     parameters in the diffusion
         b = 2*self.momentum_u #     parameters in the diffusion
@@ -63,23 +67,25 @@ class Segmenter:
         # Run iterations
         for i in range(0,self.maxiterations):
             u_old = u
-            v = self.__force_diffuse(u,self.u0,a,b,dt,steps,eye_minus_adt_Lap_inv,phi,sigma,verbose);  # Forced diffusion
-
+            v = self.__force_diffuse(u,u0,a,b,dt,steps,phi,sigma,verbose);  # Forced diffusion
+            plt.imshow(v)
+            plt.show()
+            break
             # Gradient descent step in Bhatt
-            if self.beta > 0:
-                v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1,grad_Bhatt_MC,Bhatt_MC,self.threshold_seg, self.max_sparsity_seg,self.batch_size,sigma,verbose)  # Can also att "method" argument later
-            else:
-                v2 = v
+        #     if self.beta > 0:
+        #         v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1,grad_Bhatt_MC,Bhatt_MC,self.threshold_seg, self.max_sparsity_seg,self.batch_size,sigma,verbose)  # Can also att "method" argument later
+        #     else:
+        #         v2 = v
 
-            # Thresholding
-            u = np.heaviside(v2 - 0.5, 0)
+        #     # Thresholding
+        #     u = np.heaviside(v2 - 0.5, 0)
 
-            # Stopping condition
-            dist = np.sum(np.abs(u - u_old))
-            if dist < self.delta:
-                break
+        #     # Stopping condition
+        #     dist = np.sum(np.abs(u - u_old))
+        #     if dist < self.delta:
+        #         break
 
-        return u
+        # return u
 
     def __Lap1D_neu(self, M):
         """
@@ -97,8 +103,22 @@ class Segmenter:
 
         return lap1D
 
-    def __force_diffuse(self):
-        pass
+    def __force_diffuse(self,u,u0,a,b,dt,steps,phi,sigma,verbose):
+        """
+        Computes V_k(x), the diffusion of U_k(x)
+        """
+        M, N = u.shape[0], u.shape[1]
+        v = u       # Initial condition
+        tau = dt/steps
+        sigma = sigma.reshape([256,1])
+        w = phi.T@v      
+
+        for _ in range(0, steps):
+            w_new = sigma * ((1 - 2*a*tau - b*tau)*w + tau*(a*self.__shift_left(w) + a*self.__shift_right(w) + b*phi.T@u0))
+            w = w_new
+        v = phi@w
+
+        return v
 
     def __grad_Bhatt_u(J,u,indices,M1,N1,grad_Bhatt_MC,Bhatt_MC,threshold,max_sparsity,batch_size,sigma,method,verbose):
         pass
@@ -106,19 +126,34 @@ class Segmenter:
     def __margin_finder(self):
         pass
 
+    def __shift_left(self, v):
+        v[:,:-1] = v[:,1:]
+        return v
+
+    def __shift_right(self, v):
+        v[:,1:] = v[:,:-1]
+        return v
+
 if __name__ == '__main__':
-    im = Image('image')
+    im = Image('heart')
     delta = 8
     GL_epsilon = 1e0
     steps = 10
     margin_proportion = 0.0225
     maxiterations = 50
+    grad_Bhatt_MC = 10
+    Bhatt_MC = 50
     beta         = 2*1e2
     gamma        = 2*2*1e-2
     momentum_u   = 1e-5
-    grad_Bhatt_MC = 10
-    Bhatt_MC = 50
-    seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, beta, gamma, momentum_u)
-    seg.uupdate_MBO()
+    threshold_seg = 0.25
+    max_sparsity_seg = 2000000
+    batch_size = 700
+
+    seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size)
+    seg.segment()
+    u0 = seg.init_u0()
+    plt.imshow(u0)
+    plt.show()
 
 

@@ -30,12 +30,20 @@ class Image:
         pass
 
     def make_feature_map(self):
-        pass
+        """
+        Identity feature map. Flattens out the 2D image into an M*N x 1 vector of pixel intensities.
+        """
+        M = self.image.shape[0]
+        N = self.image.shape[1]
+        J = self.image.reshape(M*N, 1)
+        
+        return J
 
     def show(self):
         plt.imshow(self.image)
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('heart')
-    print(im.image_size)
+    im = Image('image')
+    im.show()
+    
