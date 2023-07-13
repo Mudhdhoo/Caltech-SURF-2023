@@ -1,24 +1,32 @@
 import numpy as np
 from Image import Image
 import matplotlib.pyplot as plt
+from Bhatt_Calculator import Bhatt_Calculator
 
-class Segmenter:
+class Segmenter(Bhatt_Calculator):
     """
     Segmeter class.
     """
     def __init__(self, image: Image, delta, GL_epsilon, steps, margin_proportion, maxiterations, 
-                grad_Bhatt_MC, Bhatt_MC, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size) -> None:
+                grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose) -> None:
+        super().__init__(threshold_seg, Bhatt_MC, max_sparsity_seg, batch_size, sigma, method, verbose)    # Bhattacharyya paramters
+
         self.image = image   # The image to segment
+
+        # Flags
+        self.method = method
+        self.dirac = dirac
+        self.verbose = verbose
 
         # Segmentation Parameters
         self.u0 = self.init_u0()     
-        self.delta = delta;     #stopping condition
-        self.GL_epsilon = GL_epsilon    #4*1e-1; %1e0; %In Ginzburg--Landau
+        self.delta = delta;     # stopping condition
+        self.GL_epsilon = GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
         self.steps = steps      # steps in the semi-implicit Euler scheme for the diffusion
-        self.margin_proportion = margin_proportion      #0.05; %0.075 %sets margin so given proportion of pixels are included
-        self.maxiterations = maxiterations      #Max Euler iterations
-        self.grad_Bhatt_MC = grad_Bhatt_MC         #Monte Carlo iterations for grad_u Bhatt
-        self.Bhatt_MC = Bhatt_MC      #Monte Carlo iterations for Bhatt
+        self.margin_proportion = margin_proportion      # sets margin so given proportion of pixels are included
+        self.maxiterations = maxiterations      # Max Euler iterations
+        self.grad_Bhatt_MC = grad_Bhatt_MC         # Monte Carlo iterations for grad_u Bhatt
+        #self.Bhatt_MC = Bhatt_MC      # Monte Carlo iterations for Bhatt
 
         # Parameters of the optimisation scheme
         self.beta = beta
@@ -26,9 +34,9 @@ class Segmenter:
         self.momentum_u = momentum_u
 
         # Parameters for computing P1, P2
-        self.threshold_seg = threshold_seg
-        self.max_sparsity_seg  = max_sparsity_seg # 1e7; %Maximum entries in sparse matrix
-        self.batch_size = batch_size # size of batches for batch processing
+       # self.threshold_seg = threshold_seg
+       # self.max_sparsity_seg  = max_sparsity_seg # 1e7; %Maximum entries in sparse matrix
+       # self.batch_size = batch_size # size of batches for batch processing
 
     def init_u0(self):
         """
@@ -48,7 +56,7 @@ class Segmenter:
         u = self.__uupdate_MBO(self.u0)
         return u
 
-    def __uupdate_MBO(self, u, verbose = False):
+    def __uupdate_MBO(self, u):
         """
         Implements the modified MBO scheme 
         """
@@ -67,25 +75,26 @@ class Segmenter:
         # Run iterations
         for i in range(0,self.maxiterations):
             u_old = u
-            v = self.__force_diffuse(u,u0,a,b,dt,steps,phi,sigma,verbose);  # Forced diffusion
-            plt.imshow(v)
-            plt.show()
-            break
-            # Gradient descent step in Bhatt
-        #     if self.beta > 0:
-        #         v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1,grad_Bhatt_MC,Bhatt_MC,self.threshold_seg, self.max_sparsity_seg,self.batch_size,sigma,verbose)  # Can also att "method" argument later
-        #     else:
-        #         v2 = v
+            v = self.__force_diffuse(u,u0,a,b,dt,steps,phi,sigma);  # Forced diffusion
 
-        #     # Thresholding
-        #     u = np.heaviside(v2 - 0.5, 0)
+            #Gradient descent step in Bhatt
+            margin = self.__margin_finder(v,margin_proportion)
+            v_flattened = v.reshape(M1*N1, 1)
+            indices = np.where((np.abs(v_flattened - 0.5)) <= margin)[0]     # Indicies where Bhatt coeff is calculated
+            if self.beta > 0:       
+                v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1)  # Can also add "method" argument later
+            else:
+                v2 = v
 
-        #     # Stopping condition
-        #     dist = np.sum(np.abs(u - u_old))
-        #     if dist < self.delta:
-        #         break
+            # Thresholding
+            u = np.heaviside(v2 - 0.5, 0)
 
-        # return u
+            # Stopping condition
+            dist = np.sum(np.abs(u - u_old))
+            if dist < self.delta:
+                break
+
+        return u
 
     def __Lap1D_neu(self, M):
         """
@@ -103,11 +112,11 @@ class Segmenter:
 
         return lap1D
 
-    def __force_diffuse(self,u,u0,a,b,dt,steps,phi,sigma,verbose):
+    def __force_diffuse(self,u,u0,a,b,dt,steps,phi,sigma):
         """
-        Computes V_k(x), the diffusion of U_k(x)
+        Computes V_k(x), the diffusion of U_k(x). Semi-implicit Euler Scheme.
+        Performance improvement by eigendecomposition.
         """
-        M, N = u.shape[0], u.shape[1]
         v = u       # Initial condition
         tau = dt/steps
         sigma = sigma.reshape([256,1])
@@ -120,11 +129,45 @@ class Segmenter:
 
         return v
 
-    def __grad_Bhatt_u(J,u,indices,M1,N1,grad_Bhatt_MC,Bhatt_MC,threshold,max_sparsity,batch_size,sigma,method,verbose):
+    def __grad_Bhatt_u(self,J,u,indices,M1,N1):
+        """
+        Computes the first variation of the Bhattacharyya coefficient
+        """
+        n,q = J.shape
+        V1 = np.sum(1-u)
+        V2 = np.sum(u)
+        s = 1/V2 - 1/V1
+        is_index = np.zeros([n,1])
+        is_index[indices] = 1       # a vector which is 1 at a desired index and 0 at the rest
+        Z0, W0 = self.Z0_calculator(self.grad_Bhatt_MC,q)
+
+        grad =  is_index * 0.5 * s * self.Bhatt(J,u) 
+
+    def __B_grad_u_integrand(self):
         pass
 
-    def __margin_finder(self):
-        pass
+    def __margin_finder(self, v, proportion):
+        """
+        Finds the x such that the number of pixels that has a distance to 0.5 less than x is almost
+        equal to some proportion of the pixels, i.e find |sum( abs(v-0.5) < x,'all') - proportion * numel(v)| < 10.
+        Using interval bisection
+        """
+        N = np.size(v)
+        v = v.reshape(N,1) - 0.5
+        phi = abs(v)
+        MAX = 0.5
+        MIN = 0
+        for _ in range(1, 1000 + 1):
+            margin = (MIN + MAX)/2
+            val = sum(phi < margin) - proportion * N
+            if abs(val) < 10:
+                break
+            if val > 0:
+                MAX = margin
+            else:       
+                MIN = margin
+
+        return margin
 
     def __shift_left(self, v):
         v[:,:-1] = v[:,1:]
@@ -143,17 +186,17 @@ if __name__ == '__main__':
     maxiterations = 50
     grad_Bhatt_MC = 10
     Bhatt_MC = 50
-    beta         = 2*1e2
-    gamma        = 2*2*1e-2
-    momentum_u   = 1e-5
+    sigma = 1e-2
+    beta = 2*1e2
+    gamma = 2*2*1e-2
+    momentum_u = 1e-5
     threshold_seg = 0.25
     max_sparsity_seg = 2000000
     batch_size = 700
-
-    seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size)
+    method = 'random'
+    dirac = 0
+    verbose = False
+    seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose)
     seg.segment()
-    u0 = seg.init_u0()
-    plt.imshow(u0)
-    plt.show()
 
 
