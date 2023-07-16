@@ -1,5 +1,7 @@
 from random import random
+from tabnanny import verbose
 import numpy as np
+import scipy.sparse as sp
 
 # Make this class private? Add verbose function?
 class Bhatt_Calculator:
@@ -84,7 +86,53 @@ class Bhatt_Calculator:
                 perm_batch_indices = perm[I_start:I_end]
                 randomize_ind = [int(indices[i]) for i in perm_batch_indices]
                 J_I_minus_J = np.array([J[i] for i in randomize_ind]) - J_1nq  #this_batch_size x n
-                KER_above_threshold = J_I_minus_J < threshold_val and J_I_minus_J > - threshold_val
-                
-                print(KER_above_threshold)
-            # else?                                                                                                                                                                                    
+                KER_above_threshold1 = J_I_minus_J < threshold_val
+                KER_above_threshold2 = J_I_minus_J > - threshold_val
+                KER_above_threshold = np.logical_and(KER_above_threshold1,KER_above_threshold2)
+            #else?
+
+            rows, cols = np.nonzero(KER_above_threshold)
+            rows = np.expand_dims(rows[0:self.max_sparsity-count],1)
+            cols = np.expand_dims(cols[0:self.max_sparsity-count],1)
+
+            # Convert to global indices
+            rows = rows + I_start - 0 ########### -1?
+
+            l = len(rows)
+            # Incrementally add to output arrays
+            ivec[count+0:count+l] = np.random.permutation(rows)
+            jvec[count+0:count+l] = cols
+
+            # Endmatter
+            count = count + l
+            if count >= self.max_sparsity:
+                if verbose:
+                    print(f'Max sparsity reached at batch {b} of {num_batches}')
+                break
+
+        # Truncate if below max sparsity
+        sparsity = min(count,self.max_sparsity)
+        ivec = np.int64(ivec[1:sparsity])
+        jvec = np.int64(jvec[1:sparsity])
+        
+        J_i = np.squeeze(J[indices[ivec],:],1)
+        J_i = np.squeeze(J_i,1)
+        J_j = np.squeeze(J[jvec,:],1)
+        J_minus_J = J_i - J_j #J_minus_J = J[indices[ivec],:] - J[jvec,:]
+
+        # Computing P1, P2
+        S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(1,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
+        
+        if q > 1:
+            pass # Add later
+        else:
+            Amat = np.exp(logC + inv2sigma2 * (J_minus_J + self.sigma * Z0.T)**2)
+        A_ij_u_j_mat = Amat * np.squeeze(u_vec[jvec],1) #sparsity x MC
+       # S_A_ij_u_j_mat = S @ A_ij_u_j_mat #nindex x MC
+        print(S.shape)
+        print(A_ij_u_j_mat.shape)
+        print(sparsity)
+        # P1 = ((S*Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC
+        # P2 = S_A_ij_u_j_mat/sum1
+
+        # return P1, P2
