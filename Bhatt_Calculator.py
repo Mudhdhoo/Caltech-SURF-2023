@@ -112,8 +112,8 @@ class Bhatt_Calculator:
 
         # Truncate if below max sparsity
         sparsity = min(count,self.max_sparsity)
-        ivec = np.int64(ivec[1:sparsity])
-        jvec = np.int64(jvec[1:sparsity])
+        ivec = np.int64(ivec[0:sparsity])
+        jvec = np.int64(jvec[0:sparsity])
         
         J_i = np.squeeze(J[indices[ivec],:],1)
         J_i = np.squeeze(J_i,1)
@@ -121,18 +121,17 @@ class Bhatt_Calculator:
         J_minus_J = J_i - J_j #J_minus_J = J[indices[ivec],:] - J[jvec,:]
 
         # Computing P1, P2
-        S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(1,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
+        S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(0,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
         
         if q > 1:
             pass # Add later
         else:
             Amat = np.exp(logC + inv2sigma2 * (J_minus_J + self.sigma * Z0.T)**2)
         A_ij_u_j_mat = Amat * np.squeeze(u_vec[jvec],1) #sparsity x MC
-       # S_A_ij_u_j_mat = S @ A_ij_u_j_mat #nindex x MC
-        print(S.shape)
-        print(A_ij_u_j_mat.shape)
-        print(sparsity)
-        # P1 = ((S*Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC
-        # P2 = S_A_ij_u_j_mat/sum1
+        S_A_ij_u_j_mat = S @ A_ij_u_j_mat #nindex x MC
 
-        # return P1, P2
+
+        P1 = ((S*Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC
+        P2 = S_A_ij_u_j_mat/sum1
+
+        return P1, P2
