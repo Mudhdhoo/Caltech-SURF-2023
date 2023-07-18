@@ -5,7 +5,7 @@ from scipy.io import loadmat
 class Image:
     def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.01, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
         # Image set-up
-        self.image = loadmat(os.path.join('images',image_name))[image_name]     # Grey scale value
+        self.image = loadmat(os.path.join('images',image_name))[image_name]    # Grey scale value
         self.image_size = self.image.shape
         self.scale = scale
         self.blur = blur
@@ -46,4 +46,5 @@ class Image:
 if __name__ == '__main__':
     im = Image('heart')
     im.show()
+
     

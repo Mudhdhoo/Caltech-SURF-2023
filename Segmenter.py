@@ -37,17 +37,12 @@ class Segmenter(Bhatt_Calculator):
         self.fig = plt.figure()
         plt.ion()
 
-        # Parameters for computing P1, P2
-       # self.threshold_seg = threshold_seg
-       # self.max_sparsity_seg  = max_sparsity_seg # 1e7; %Maximum entries in sparse matrix
-       # self.batch_size = batch_size # size of batches for batch processing
-
     def init_u0(self):
         """
         Creates the initial segmentation of the image.
         """
         M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
-        circle_center = np.array([M1/2, N1/2])  
+        circle_center = np.array([M1/2.5, N1/2])  
         circle_radius = N1/5
             # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
@@ -223,7 +218,7 @@ class Segmenter(Bhatt_Calculator):
 
 if __name__ == '__main__':
     im = Image('heart')
-    delta = 8
+    delta = 15
     GL_epsilon = 1e0
     steps = 10
     margin_proportion = 0.0225
