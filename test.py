@@ -1,14 +1,15 @@
+from tkinter import *
+import os
 import numpy as np
-import time
-import matplotlib.pyplot as plt
+from scipy.io import loadmat
+from PIL import Image, ImageTk
 
-#plt.ion()
-fig = plt.figure()
+image = loadmat(os.path.join('images','heart'))['heart']    # Grey scale value
+app = Tk()
+app.geometry("256x256")
+canvas = Canvas(app)
+canvas.pack(anchor='nw', fill='both', expand=1)
 
-for i in range(0,10):
-    im = np.random.rand(256,256)
-    plt.imshow(im)
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    plt.pause(0.1)
-plt.show()
+image = ImageTk.PhotoImage(image=Image.fromarray(image))
+canvas.create_image(0,0, image = image, anchor = 'nw')
+app.mainloop()

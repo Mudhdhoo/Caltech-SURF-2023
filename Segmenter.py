@@ -5,8 +5,66 @@ from Bhatt_Calculator import Bhatt_Calculator
 
 class Segmenter(Bhatt_Calculator):
     """
-    Segmeter class.
+    Segmeter class handling the image segmentation. Inherits from Bhatt_Calculator class.
+
+    ------------ Parameters ------------
+    image: Image
+        Instance of the Image class.
+
+    delta: int
+        Parameter for stopping condition in the MBO scheme. The loop is terminated if
+        sum(U_k+1) - sum(U_k) < delta.
+
+    GL_epsilon: float
+        Epsilon in Ginzburg-Landau.
+
+    steps: int
+        Steps in the semi-implicit Euler scheme for the diffusion.
+
+    margin_proportion: float
+        Sets margin so given proportion of pixels are included when computing x where V(x)
+        is sufficiently near 1/2.
+
+    maxiterations: int
+        Maximum iterations in the Euler scheme (SDIE).
+
+    grad_Bhatt_MC: int
+        Number of Monte-Carlo iteration for calculating grad_u_Bhatt.
+
+    Bhatt_MC: int
+        Number of Monte-Carlo iteration for calculating the Bhattacharyya coefficient.
+
+    sigma: float
+        Standarddeviation of the Bhattacharyya kernel K(z).
+
+    beta: float
+        Parameter in the optimization scheme. Multiplier of B(J,u).
+
+    gamma: float
+        Parameter in the optimization scheme. Multiplier of GL_epsilon(u).
+
+    momentum_u: float
+        Parameter in the optimization scheme. Multiplier of ||u - u_n||_2^2.
+
+    threshold_seg: float
+        Threshold above which kernel values are determined to be significant in computing P1 and P2.
+
+    max_sparsity_seg: int
+        Maximum entries in the sparse matrix when computing P1 and P2.
+
+    batch_size: int
+        Size of batches for batch processing when computing P1 and P2.
+
+    method: str
+        Method for computing the Gaussian integrals. 'random' or 'quadrature'.
+
+    dirac: bool
+        Determines if Dirac or Gaussian is used.
+
+    verbose: bool
+        Write runtime information to screen if True, otherwise write nothing.
     """
+
     def __init__(self, image: Image, delta, GL_epsilon, steps, margin_proportion, maxiterations, 
                 grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose) -> None:
         super().__init__(threshold_seg, Bhatt_MC, max_sparsity_seg, batch_size, sigma, method, verbose)    # Bhattacharyya paramters
@@ -43,8 +101,7 @@ class Segmenter(Bhatt_Calculator):
         """
         M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
         circle_center = np.array([M1/2.5, N1/2])  
-        circle_radius = N1/5
-            # Hardcoded atm, can change to be dynamic later
+        circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
@@ -95,7 +152,7 @@ class Segmenter(Bhatt_Calculator):
             # Thresholding
             u = np.heaviside(v2 - 0.5, 0)
 
-            # Plot the segmentation
+            # Render the segmentation
             self.__render(u)
 
             # Stopping condition

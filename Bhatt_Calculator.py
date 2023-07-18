@@ -4,6 +4,32 @@ from numpy.matlib import repmat
 
 # Make this class private? Add verbose function?
 class Bhatt_Calculator:
+    """
+    Class for calculating the Bhattacharyya coefficient. Parent class of Segmenter and Reconstructor.
+
+    ------------ Parameters ------------
+    threshold: float
+    Threshold above which kernel values are determined to be significant in computing P1 and P2.
+
+    Bhatt_MC: int
+        Number of Monte-Carlo iteration for calculating the Bhattacharyya coefficient.
+
+    max_sparsity: int
+        Maximum entries in the sparse matrix when computing P1 and P2.
+
+    batch_size: int
+        Size of batches for batch processing when computing P1 and P2.
+
+    sigma: float
+        Standarddeviation of the Bhattacharyya kernel K(z).
+
+    method: str
+        Method for computing the Gaussian integrals. 'random' or 'quadrature'.
+
+    verbose: bool
+        Write runtime information to screen if True, otherwise write nothing.
+    """
+    
     def __init__(self,threshold,Bhatt_MC,max_sparsity,batch_size,sigma,method,verbose) -> None:
         self.threshold = threshold
         self.Bhatt_MC = Bhatt_MC
