@@ -45,7 +45,5 @@ class Image:
 
 if __name__ == '__main__':
     im = Image('heart')
-    for i in im.image:
-        print(i)
     im.show()
     

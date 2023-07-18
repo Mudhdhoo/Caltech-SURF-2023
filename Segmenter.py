@@ -33,6 +33,10 @@ class Segmenter(Bhatt_Calculator):
         self.gamma = gamma
         self.momentum_u = momentum_u
 
+        # Plotting
+        self.fig = plt.figure()
+        plt.ion()
+
         # Parameters for computing P1, P2
        # self.threshold_seg = threshold_seg
        # self.max_sparsity_seg  = max_sparsity_seg # 1e7; %Maximum entries in sparse matrix
@@ -44,16 +48,22 @@ class Segmenter(Bhatt_Calculator):
         """
         M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
         circle_center = np.array([M1/2, N1/2])  
-        circle_radius = N1/5    # Hardcoded atm, can change to be dynamic later
+        circle_radius = N1/5
+            # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
                 phi0[i][j] = circle_radius - np.sqrt(np.sum(([i, j]-circle_center)**2))
         u0 = np.heaviside(phi0, 0)
+
         return u0
     
     def segment(self):
+        """
+        Segments the given image using the modified MBO scheme.
+        """
         u = self.__uupdate_MBO(self.u0)
+
         return u
 
     def __uupdate_MBO(self, u):
@@ -90,11 +100,14 @@ class Segmenter(Bhatt_Calculator):
             # Thresholding
             u = np.heaviside(v2 - 0.5, 0)
 
+            # Plot the segmentation
+            self.__render(u)
+
             # Stopping condition
             dist = np.sum(np.abs(u - u_old))
             if dist < self.delta:
                 break
-        print(u)
+
         return u
 
     def __Lap1D_neu(self, M):
@@ -197,6 +210,16 @@ class Segmenter(Bhatt_Calculator):
     def __shift_right(self, v):
         v[:,1:] = v[:,:-1]
         return v
+
+    def __render(self,u):
+        """
+        Live rendering of segmentation.
+        """ 
+        segmentation = u*self.image.image
+        plt.imshow(segmentation)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        plt.show()
 
 if __name__ == '__main__':
     im = Image('heart')

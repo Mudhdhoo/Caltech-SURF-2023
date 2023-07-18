@@ -24,7 +24,7 @@ class Bhatt_Calculator:
         val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
         print(val)
         return val
-
+ 
     def bhatt_integrand(self,J, u_vec, Z0, indices):
         """
         Computes f(j,u,z) for Monte-Carlo Sampling
