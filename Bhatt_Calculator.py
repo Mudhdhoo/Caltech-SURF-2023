@@ -1,7 +1,6 @@
-from random import random
-from tabnanny import verbose
 import numpy as np
 import scipy.sparse as sp
+from numpy.matlib import repmat
 
 # Make this class private? Add verbose function?
 class Bhatt_Calculator:
@@ -22,16 +21,25 @@ class Bhatt_Calculator:
         u_vec = u.reshape(n,1)
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
         indices = np.random.randint(0,int(n), Z0.shape)     # Pick random indicies for Monte-Carlo sampling
-        val = self.bhatt_integrand(J, u_vec, Z0, indices)
+        val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
+        print(val)
+        return val
 
     def bhatt_integrand(self,J, u_vec, Z0, indices):
         """
-        Computes either h(j,u,x,z) or f(j,u,z) for Monte-Carlo Sampling
+        Computes f(j,u,z) for Monte-Carlo Sampling
         """
         MC, q = Z0.shape
         n = J.shape[0]
         nindex = len(indices)
-        P1_Z,P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
+        P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
+        B_KER_Z0 = ((2*np.pi)**(q/2) * self.sigma**(1/2) * np.exp(0.5*np.sum(Z0**2,1))).reshape(-1,1) #MC x 1
+        B_KER_Z_Jx = repmat(B_KER_Z0, 1, nindex)      # nindex x MC
+    
+        # evaluate integrand pointwise
+        fout = B_KER_Z_Jx * np.sqrt(P1_Z * P2_Z)    # max(P1_Z*P2_Z, 0)?
+
+        return fout
 
     def Z0_calculator(self, MC_iterations, q):
         if self.method == 'random':
@@ -106,7 +114,7 @@ class Bhatt_Calculator:
             # Endmatter
             count = count + l
             if count >= self.max_sparsity:
-                if verbose:
+                if self.verbose:
                     print(f'Max sparsity reached at batch {b} of {num_batches}')
                 break
 
@@ -114,7 +122,6 @@ class Bhatt_Calculator:
         sparsity = min(count,self.max_sparsity)
         ivec = np.int64(ivec[0:sparsity])
         jvec = np.int64(jvec[0:sparsity])
-        
         J_i = np.squeeze(J[indices[ivec],:],1)
         J_i = np.squeeze(J_i,1)
         J_j = np.squeeze(J[jvec,:],1)

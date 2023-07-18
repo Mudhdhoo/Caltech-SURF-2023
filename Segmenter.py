@@ -81,6 +81,7 @@ class Segmenter(Bhatt_Calculator):
             margin = self.__margin_finder(v,margin_proportion)
             v_flattened = v.reshape(M1*N1, 1)
             indices = np.where((np.abs(v_flattened - 0.5)) <= margin)[0]     # Indicies where Bhatt coeff is calculated
+            indices = np.expand_dims(indices,1)
             if self.beta > 0:       
                 v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1)  # Can also add "method" argument later
             else:
@@ -93,7 +94,7 @@ class Segmenter(Bhatt_Calculator):
             dist = np.sum(np.abs(u - u_old))
             if dist < self.delta:
                 break
-
+        print(u)
         return u
 
     def __Lap1D_neu(self, M):
@@ -133,6 +134,7 @@ class Segmenter(Bhatt_Calculator):
         """
         Computes the first variation of the Bhattacharyya coefficient
         """
+        # Compute 0.5*(V_1^-1 + V_2^-2)*B(J,u)
         n,q = J.shape
         V1 = np.sum(1-u)
         V2 = np.sum(u)
@@ -140,11 +142,30 @@ class Segmenter(Bhatt_Calculator):
         is_index = np.zeros([n,1])
         is_index[indices] = 1       # a vector which is 1 at a desired index and 0 at the rest
         Z0, W0 = self.Z0_calculator(self.grad_Bhatt_MC,q)
+        grad =  is_index * 0.5 * s * self.Bhatt(J,u)    # 0.5*(V_1^-1 + V_2^-2)*B(J,u)
 
-        grad =  is_index * 0.5 * s * self.Bhatt(J,u) 
+        # Compute integral of Q(z)
+        u = u.reshape(n,1)
+        grad1 = Z0.shape[0]*np.sum(self.__B_grad_u_integrand(J, u, Z0, indices, V1, V2) * W0, 1)
+        grad1 = np.expand_dims(grad1,1)
 
-    def __B_grad_u_integrand(self):
-        pass
+        indices = np.squeeze(indices,1)
+        grad[indices] = grad[indices] + grad1
+        grad = grad.reshape(M1, N1)
+
+        return grad
+
+    def __B_grad_u_integrand(self, J, u_vec, Z0, indices, V1, V2):
+        """
+        Computes f(J,u,z) in the gradient.
+        """
+        MC, q = Z0.shape
+        n = J.shape[0]
+        nindex = len(indices)
+        P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
+        fout = 0.5 * (1/V2 * np.sqrt( P1_Z/(P2_Z + 1e-8) ) - 1/V1 * np.sqrt( P2_Z / (P1_Z + 1e-8) ))
+
+        return fout
 
     def __margin_finder(self, v, proportion):
         """
@@ -195,7 +216,7 @@ if __name__ == '__main__':
     batch_size = 700
     method = 'random'
     dirac = 0
-    verbose = False
+    verbose = True
     seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose)
     seg.segment()
 
