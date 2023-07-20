@@ -281,11 +281,11 @@ if __name__ == '__main__':
     margin_proportion = 0.0225
     maxiterations = 50
     grad_Bhatt_MC = 10
-    Bhatt_MC = 50
+    Bhatt_MC = 30 #50
     sigma = 1e-2
     beta = 2*1e2
     gamma = 2*2*1e-2
-    momentum_u = 1e-5
+    momentum_u = 1e-4
     threshold_seg = 0.25
     max_sparsity_seg = 2000000
     batch_size = 700

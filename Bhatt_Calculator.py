@@ -48,7 +48,9 @@ class Bhatt_Calculator:
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
         indices = np.random.randint(0,int(n), Z0.shape)     # Pick random indicies for Monte-Carlo sampling
         val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
-        print(val)
+        if self.verbose:
+            print(val)
+            
         return val
  
     def bhatt_integrand(self,J, u_vec, Z0, indices):
