@@ -1,11 +1,12 @@
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.io import loadmat
 
 class Image:
     def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.01, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
         # Image set-up
-        self.image = loadmat(os.path.join('images',image_name))[image_name]    # Grey scale value
+        self.image = loadmat(os.path.join('images',image_name))[image_name]/1    # Grey scale value
         self.image_size = self.image.shape
         self.scale = scale
         self.blur = blur
@@ -23,8 +24,21 @@ class Image:
         pass
 
     def noise_image(self):
-        # TODO for reconstruction
-        pass
+        M, N = self.image.shape
+        noise = np.random.normal(0,20,[M,N])
+        
+        return self.image + noise
+        #return noise
+
+    def build_y(self):
+        # Blur the image
+        if self.blur:
+            y = self.blur_image()
+
+        # Add noise
+        y = self.noise_image()
+
+        return y
         
     def resize_image(self):
         pass
@@ -36,6 +50,7 @@ class Image:
         M = self.image.shape[0]
         N = self.image.shape[1]
         J = self.image.reshape(M*N, 1)
+       # J = np.flip(J)
 
         return J
 
@@ -44,7 +59,8 @@ class Image:
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('heart')
+    im = Image('rectangle')
+    print(im.image)
     im.show()
-
+    plt.show()
     

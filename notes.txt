@@ -1,4 +1,42 @@
-TODO:
-Look into image matrix values - what does im2double do in images_setup?
+24 Jul
 
+Found problem:
+Bhattacharyya coefficient is wrongly calculated for some reason. Exceeds 1 sometimes.
+
+Problem seems to lie in calcluating the probabilities. P1_Z looks way too large.
+------------------------------------------------------------------------------------------
+25 Jul
+
+Seems to be a problem in "rows, cols = np.nonzero(KER_above_threshold)". The values of rows and cols
+dont match with MATLAB code. The indicies are not correctly ordered.
+
+Difference between MATLAB's find() and python's np.nonzero: Python gives indices row by row while MATLAB
+gives column by column. Fixed (kind of)
+
+The lack of a python equivalen to ".'" in B_KER_Z_Jx seems to make fout much bigger than in MATLAB. Fixed
+
+Gradients calculated incorrectly. The gradients are exploding as time goes on. Problems seems to lie in computing integral of Q(z). 
+
+------------------------------------------------------------------------------------------
+
+26 Jul
+
+Discovered difference in reshaping order of MATLAB and python. MATLAB reshapes column by column when flattening,
+while python does row by row. Check if this affects anything. Probably not.
+
+Diffusion seems to be wrong. Looks like the shift functions are broken in their paddings.
+
+PROBLEM: The shift functions operate on the same array object (v) --> shifting left and right sequentially
+leads to the SAME array being shifted. Need to make 2 copies of v. FIXED --> Diffusion should be bug-free
+
+Next problem seems to be in grad_bhatt_u function.
+
+Changing all Z0, indices and other non-deterministic stuff to be deterministic (hardcoded) for debugging.
+
+------------------------------------------------------------------------------------------
+
+27 Jul
+
+Still doesn't work on simple image, but works much better on the heart image after bug fixing. It no longer
+collpases into itself, even with np.maximum used in B_grad_u_integrand.
 

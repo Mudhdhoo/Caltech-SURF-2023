@@ -2,6 +2,8 @@ import numpy as np
 from Image import Image
 import matplotlib.pyplot as plt
 from Bhatt_Calculator import Bhatt_Calculator
+import time
+from scipy.io import loadmat
 
 class Segmenter(Bhatt_Calculator):
     """
@@ -77,9 +79,14 @@ class Segmenter(Bhatt_Calculator):
         self.verbose = verbose
 
         # Segmentation Parameters
-        self.u0 = self.init_u0()     
+        #self.u0 = self.init_u0()     
+       # self.u0 = loadmat('u0')['u0'] #########
+        self.u0 = np.zeros([7,7]) 
+        self.u0[1:6,1:6] =  1
+
         self.delta = delta;     # stopping condition
         self.GL_epsilon = GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
+     
         self.steps = steps      # steps in the semi-implicit Euler scheme for the diffusion
         self.margin_proportion = margin_proportion      # sets margin so given proportion of pixels are included
         self.maxiterations = maxiterations      # Max Euler iterations
@@ -128,12 +135,22 @@ class Segmenter(Bhatt_Calculator):
         a = self.gamma*self.GL_epsilon#     parameters in the diffusion
         b = 2*self.momentum_u #     parameters in the diffusion
         M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
-        
+
         # Compute eigendecomposition
         eye_minus_adt_Lap_inv = np.linalg.inv(np.eye(M1) - a*(dt/self.steps)*self.__Lap1D_neu(M1))
         eye_minus_adt_Lap_inv = (eye_minus_adt_Lap_inv + eye_minus_adt_Lap_inv.T)/2
         sigma, phi = np.linalg.eig(eye_minus_adt_Lap_inv)
 
+        #############################################
+        temp = sigma[-1]
+        sigma[-1] = sigma[-2]
+        sigma[-2] = temp
+        sigma = sigma.reshape(-1,1)
+
+        phi[:,-2:] = np.flip(phi[:,-2:])
+        #############################################
+
+        self.__render(u)
         # Run iterations
         for i in range(0,self.maxiterations):
             u_old = u
@@ -144,8 +161,10 @@ class Segmenter(Bhatt_Calculator):
             v_flattened = v.reshape(M1*N1, 1)
             indices = np.where((np.abs(v_flattened - 0.5)) <= margin)[0]     # Indicies where Bhatt coeff is calculated
             indices = np.expand_dims(indices,1)
-            if self.beta > 0:       
-                v2 = v - dt * beta * self.__grad_Bhatt_u(J,u,indices,M1,N1)  # Can also add "method" argument later
+
+            if self.beta > 0:     
+                grad = self.__grad_Bhatt_u(J,u,indices,M1,N1)   
+                v2 = v - dt * beta * grad # Can also add "method" argument later
             else:
                 v2 = v
 
@@ -167,6 +186,8 @@ class Segmenter(Bhatt_Calculator):
         Creates the Delta^(M) matrix that implements the 3 point stencil matrix
         with Neumann boundary conditions.
         """
+        # Implement sparse matrices for speed up?
+
         # Create 3 point stencil matrix
         diagonal = -np.diag(np.ones(M)*2)
         upper_offset = np.diag(np.ones(M-1), k = 1)
@@ -184,15 +205,30 @@ class Segmenter(Bhatt_Calculator):
         Performance improvement by eigendecomposition.
         """
         v = u       # Initial condition
-        tau = dt/steps
-        sigma = sigma.reshape([256,1])
-        w = phi.T@v      
+        #tau = dt/steps
 
+        dt = dt/steps #######################
+
+        # w = phi.T@v      
+
+        # for _ in range(0, steps):
+        #     w_new = sigma * ((1 - 2*a*tau - b*tau)*w + tau*(a*self.__shift_left(w) + a*self.__shift_right(w) + b*phi.T@u0))
+        #     w = w_new
+        # v = phi@w
+
+        ####################################
+        Phi_T_v = phi.T @ v
+        bdt_Phi_T_u0 = b*dt*phi.T @ u0
+        alpha = (1 - 2 * a * dt - b * dt)
         for _ in range(0, steps):
-            w_new = sigma * ((1 - 2*a*tau - b*tau)*w + tau*(a*self.__shift_left(w) + a*self.__shift_right(w) + b*phi.T@u0))
-            w = w_new
-        v = phi@w
+            Phi_T_v_1 = np.copy(Phi_T_v)
+            Phi_T_v_2 = np.copy(Phi_T_v)
+            Phi_T_w = alpha*Phi_T_v + dt * a *(self.__shift_left(Phi_T_v_1) + self.__shift_right(Phi_T_v_2)) + bdt_Phi_T_u0
+            Phi_T_v = sigma * Phi_T_w
 
+        v = phi @ Phi_T_v
+
+        ####################################
         return v
 
     def __grad_Bhatt_u(self,J,u,indices,M1,N1):
@@ -203,16 +239,31 @@ class Segmenter(Bhatt_Calculator):
         n,q = J.shape
         V1 = np.sum(1-u)
         V2 = np.sum(u)
+
         s = 1/V2 - 1/V1
         is_index = np.zeros([n,1])
         is_index[indices] = 1       # a vector which is 1 at a desired index and 0 at the rest
         Z0, W0 = self.Z0_calculator(self.grad_Bhatt_MC,q)
+
+        #######################################
+        Z01 = np.array([[0.708056269489433],
+                        [-0.185741243465675],
+                        [0.881584314620342],
+                        [-1.796442415931539],
+                        [-1.131685703980258],
+                        [-1.090086866765954],
+                        [-1.145274943496607],
+                        [2.393388102731935],
+                        [1.730493141993269],
+                        [-0.619657736298477]])
+        #######################################
+
         grad =  is_index * 0.5 * s * self.Bhatt(J,u)    # 0.5*(V_1^-1 + V_2^-2)*B(J,u)
 
-        # Compute integral of Q(z)
+        # Compute integral of Q(z)  
         u = u.reshape(n,1)
-        grad1 = Z0.shape[0]*np.sum(self.__B_grad_u_integrand(J, u, Z0, indices, V1, V2) * W0, 1)
-        grad1 = np.expand_dims(grad1,1)
+        grad1 = Z0.shape[0]*np.sum(self.__B_grad_u_integrand(J, u, Z0, indices, V1, V2) * W0, 1) ########### Problem
+        grad1 = np.expand_dims(grad1,1) 
 
         indices = np.squeeze(indices,1)
         grad[indices] = grad[indices] + grad1
@@ -228,7 +279,8 @@ class Segmenter(Bhatt_Calculator):
         n = J.shape[0]
         nindex = len(indices)
         P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
-        fout = 0.5 * (1/V2 * np.sqrt( P1_Z/(P2_Z + 1e-8) ) - 1/V1 * np.sqrt( P2_Z / (P1_Z + 1e-8) ))
+        #fout = 0.5 * (1/V2 * np.sqrt( P1_Z/(P2_Z + 1e-8) ) - 1/V1 * np.sqrt( P2_Z / (P1_Z + 1e-8) ))
+        fout = 0.5 * (1/V2 * np.sqrt( np.maximum(P1_Z/(P2_Z + 1e-8),0) ) - 1/V1 * np.sqrt( np.maximum(P2_Z / (P1_Z + 1e-8),0) ))
 
         return fout
 
@@ -265,34 +317,41 @@ class Segmenter(Bhatt_Calculator):
 
     def __render(self,u):
         """
-        Live rendering of segmentation.
+        Live rendering of the segmentation.
         """ 
         segmentation = u*self.image.image
+        #segmentation = u
         plt.imshow(segmentation)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('heart')
-    delta = 15
-    GL_epsilon = 1e0
-    steps = 10
-    margin_proportion = 0.0225
-    maxiterations = 50
+    im = Image('rectangle')
+    delta = 2
+    GL_epsilon = 1
+    steps = 100
+    margin_proportion = 0.05
+    maxiterations = 25
     grad_Bhatt_MC = 10
-    Bhatt_MC = 30 #50
+    Bhatt_MC = 50
     sigma = 1e-2
     beta = 2*1e2
     gamma = 2*2*1e-2
-    momentum_u = 1e-4
-    threshold_seg = 0.25
-    max_sparsity_seg = 2000000
+    momentum_u = 1e-7
+    threshold_seg = 0.01    # TODO threshold_seg = min(threshold_seg,C);
+    max_sparsity_seg = 62500 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
     batch_size = 700
     method = 'random'
     dirac = 0
     verbose = True
+
     seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose)
     seg.segment()
 
-
+    #u0 = seg.init_u0()
+    # u0 = seg.u0
+    # print(u0)
+    # fig = plt.figure()
+    # plt.imshow(u0)
+    # plt.show()
