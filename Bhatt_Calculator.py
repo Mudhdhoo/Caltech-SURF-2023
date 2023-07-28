@@ -51,109 +51,7 @@ class Bhatt_Calculator:
         n, q = J.shape
         u_vec = u.reshape(n,1)
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
-        Z01 = np.array([[-0.630254567737951,
-                        3.002049941761356,
-                        0.811523935348309,
-                        0.814732795773040,
-                        -0.159896587337345,
-                        -0.312704541017745,
-                        0.814782078244699,
-                        1.179967943037499,
-                        1.459282139680454,
-                        1.375259510665675,
-                        1.092592061916827,
-                        -0.024784250530783,
-                        -0.026131419139398,
-                        -0.879148941815737,
-                        -0.134439026341600,
-                        0.392561811482352,
-                        -1.391248438007471,
-                        -0.408388238239126,
-                        -0.407598940833737,
-                        0.093749542417616,
-                        -0.326930871476909,
-                        -0.323100211148631,
-                        -1.308811412054652,
-                        -1.158756576085709,
-                        -1.294497636454334,
-                        0.308368086409617,
-                        0.432375611810973,
-                        -1.873024877129877,
-                        -1.123501499312582,
-                        -0.369292987658857,
-                        0.543207695793634,
-                        0.209104562663669,
-                        0.860536810080937,
-                        -1.352695338915951,
-                        -0.656084245108649,
-                        -1.351046864732875,
-                        0.089603499984597,
-                        -0.814711163218137,
-                        0.762269279829454,
-                        -1.689402186625835,
-                        0.080682696121877,
-                        -2.162310352286902,
-                        -0.909154477079780,
-                        -0.078678618726943,
-                        0.398146355933663,
-                        0.332133703506583,
-                        -1.757870525033633,
-                        0.472557971350306,
-                        0.799484467152829,
-                        -0.798391311005358]]).T
-
         indices = np.random.randint(0,int(n), Z0.shape)     # Pick random indicies for Monte-Carlo sampling
-        indices1 = np.array([[37,
-                            6,
-                            44,
-                            26,
-                            1,
-                            8,
-                            13,
-                            2,
-                            34,
-                            2,
-                            25,
-                            24,
-                            14,
-                            29,
-                            15,
-                            46,
-                            1,
-                            28,
-                            19,
-                            19,
-                            2,
-                            34,
-                            28,
-                            38,
-                            39,
-                            13,
-                            10,
-                            18,
-                            36,
-                            7,
-                            22,
-                            1,
-                            4,
-                            35,
-                            40,
-                            45,
-                            45,
-                            31,
-                            7,
-                            4,
-                            39,
-                            37,
-                            31,
-                            36,
-                            10,
-                            39,
-                            48,
-                            21,
-                            13,
-                            24]]).T
-
         val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
 
         if self.verbose:
@@ -226,70 +124,17 @@ class Bhatt_Calculator:
             if q == 1:
                 perm_batch_indices = perm[I_start:I_end+1]
                 randomize_ind = np.array([int(indices[i]) for i in perm_batch_indices])
-                randomize_ind1 = np.array([46,
-39,
-34,
-31,
- 7,
-13,
-13,
- 1,
-29,
-45,
- 8,
- 2,
-37,
-45,
-28,
-19,
-31,
- 7,
- 2,
-21,
-22,
-10,
-26,
-39,
-40,
- 4,
-37,
-34,
- 2,
- 4,
-39,
-14,
-24,
-25,
-15,
-35,
-48,
-18,
- 6,
-13,
- 1,
-36,
-38,
-24,
- 1,
-36,
-10,
-28,
-19,
-44])
-                #J_I_minus_J = J[randomize_ind1-1] - J_1nq
+
                 J_I_minus_J = np.array([J[i] for i in randomize_ind]) - J_1nq  #this_batch_size x n
                 KER_above_threshold1 = J_I_minus_J < threshold_val
                 KER_above_threshold2 = J_I_minus_J > - threshold_val
                 KER_above_threshold = np.logical_and(KER_above_threshold1,KER_above_threshold2)
             #else?
 
-            ############# Construction Site #############
             rows, cols = np.nonzero(KER_above_threshold)
-            #rows, cols = self.find_nonzero(KER_above_threshold)
 
             rows = np.expand_dims(rows[0:self.max_sparsity-count],1)
             cols = np.expand_dims(cols[0:self.max_sparsity-count],1)
-            ##############################################
 
             # Convert to global indices
             rows = rows + I_start - 0 ########### -1?
@@ -313,10 +158,6 @@ class Bhatt_Calculator:
         J_i = np.squeeze(J_i,1)
         J_j = np.squeeze(J[jvec,:],1)
         J_minus_J = J_i - J_j #J_minus_J = J[indices[ivec],:] - J[jvec,:]
-
-        ################################
-       # J_minus_J = np.zeros(jvec.shape)
-        ################################
 
         # Computing P1, P2
         S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(0,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
