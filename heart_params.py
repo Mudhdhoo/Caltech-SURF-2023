@@ -9,7 +9,7 @@ sigma = 1e-2
 #sigma = 1e-10
 beta = 2*1e2
 gamma = 2*2*1e-2
-momentum_u = 1e-4
+momentum_u = 1e-5
 threshold_seg = 0.25    # TODO threshold_seg = min(threshold_seg,C);
 max_sparsity_seg = 2000000 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
 batch_size = 700

@@ -45,3 +45,19 @@ S seems to be wrongly computed in Pcalculator_sparse2.
 Amat is exactly the same in Python and MATLAB
 
 Problem seems to lie in computing S or A_ij_u_j_mat.
+
+------------------------------------------------------------------------------------------
+28 Jul
+
+A_ij_u_j_mat seems to be equal in MATLAB and python
+
+S is computed differently in MATLAB and Python
+
+Computation of ivec in line 299 was wrong. Mistook perm for np.random.permutaion. perm is a matrix in MATLAB, 
+not a command. FIXED --> Now P1 and P2 are the same as in MATLAB (with some stuff hard coded)
+
+J_minus_J is still not calculated the same
+
+Works now for simple cases (rect, triangle), but not for heart
+
+Ok the problem seemed to be that I forgot to normalize the heart image to [0,1]. After I did that it worked!!!

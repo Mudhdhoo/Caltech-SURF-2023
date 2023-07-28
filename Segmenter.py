@@ -79,10 +79,10 @@ class Segmenter(Bhatt_Calculator):
         self.verbose = verbose
 
         # Segmentation Parameters
-        #self.u0 = self.init_u0()     
-       # self.u0 = loadmat('u0')['u0'] #########
-        self.u0 = np.zeros([7,7]) 
-        self.u0[1:6,1:6] =  1
+        self.u0 = self.init_u0()     
+        #self.u0 = loadmat('u0')['u0'] #########
+       # self.u0 = np.zeros([7,7]) 
+        #self.u0[1:6,1:6] =  1
 
         self.delta = delta;     # stopping condition
         self.GL_epsilon = GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
@@ -142,12 +142,12 @@ class Segmenter(Bhatt_Calculator):
         sigma, phi = np.linalg.eig(eye_minus_adt_Lap_inv)
 
         #############################################
-        temp = sigma[-1]
-        sigma[-1] = sigma[-2]
-        sigma[-2] = temp
+        # temp = sigma[-1]
+        # sigma[-1] = sigma[-2]
+        # sigma[-2] = temp
         sigma = sigma.reshape(-1,1)
 
-        phi[:,-2:] = np.flip(phi[:,-2:])
+        # phi[:,-2:] = np.flip(phi[:,-2:])
         #############################################
 
         self.__render(u)
@@ -246,7 +246,7 @@ class Segmenter(Bhatt_Calculator):
         Z0, W0 = self.Z0_calculator(self.grad_Bhatt_MC,q)
 
         #######################################
-        Z0 = np.array([[0.708056269489433],
+        Z01 = np.array([[0.708056269489433],
                         [-0.185741243465675],
                         [0.881584314620342],
                         [-1.796442415931539],
@@ -327,7 +327,7 @@ class Segmenter(Bhatt_Calculator):
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('rectangle')
+    im = Image('heart')
     delta = 2
     GL_epsilon = 1
     steps = 100
@@ -341,6 +341,25 @@ if __name__ == '__main__':
     momentum_u = 1e-7
     threshold_seg = 0.01    # TODO threshold_seg = min(threshold_seg,C);
     max_sparsity_seg = 62500 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
+    batch_size = 700
+    method = 'random'
+    dirac = 0
+    verbose = True
+
+    delta = 8
+    GL_epsilon = 1e0
+    steps = 10
+    margin_proportion = 0.0225
+    maxiterations = 50
+    grad_Bhatt_MC = 10
+    Bhatt_MC = 50
+    sigma = 1e-2
+    #sigma = 1e-10
+    beta = 2*1e2
+    gamma = 2*2*1e-2
+    momentum_u = 1e-5
+    threshold_seg = 0.25    # TODO threshold_seg = min(threshold_seg,C);
+    max_sparsity_seg = 2000000 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
     batch_size = 700
     method = 'random'
     dirac = 0
