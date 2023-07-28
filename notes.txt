@@ -40,3 +40,8 @@ Changing all Z0, indices and other non-deterministic stuff to be deterministic (
 Still doesn't work on simple image, but works much better on the heart image after bug fixing. It no longer
 collpases into itself, even with np.maximum used in B_grad_u_integrand.
 
+S seems to be wrongly computed in Pcalculator_sparse2.  
+
+Amat is exactly the same in Python and MATLAB
+
+Problem seems to lie in computing S or A_ij_u_j_mat.

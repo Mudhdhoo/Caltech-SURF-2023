@@ -48,7 +48,7 @@ class Bhatt_Calculator:
         n, q = J.shape
         u_vec = u.reshape(n,1)
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
-        Z01 = np.array([[-0.630254567737951,
+        Z0 = np.array([[-0.630254567737951,
                         3.002049941761356,
                         0.811523935348309,
                         0.814732795773040,
@@ -100,7 +100,7 @@ class Bhatt_Calculator:
                         -0.798391311005358]]).T
 
         indices = np.random.randint(0,int(n), Z0.shape)     # Pick random indicies for Monte-Carlo sampling
-        indices1 = np.array([[37,
+        indices = np.array([[37,
                             6,
                             44,
                             26,
@@ -221,8 +221,8 @@ class Bhatt_Calculator:
 
             # Compute norm squared for the batch
             if q == 1:
-                perm_batch_indices = perm[I_start:I_end+1]
-                randomize_ind = np.array([int(indices[i]) for i in perm_batch_indices])
+                #perm_batch_indices = perm[I_start:I_end+1]
+                #randomize_ind = np.array([int(indices[i]) for i in perm_batch_indices])
                 randomize_ind1 = np.array([46,
 39,
 34,
@@ -273,16 +273,16 @@ class Bhatt_Calculator:
 28,
 19,
 44])
-                #J_I_minus_J = J[randomize_ind1-1] - J_1nq
-                J_I_minus_J = np.array([J[i] for i in randomize_ind]) - J_1nq  #this_batch_size x n
+                J_I_minus_J = J[randomize_ind1-1] - J_1nq
+                #J_I_minus_J = np.array([J[i] for i in randomize_ind]) - J_1nq  #this_batch_size x n
                 KER_above_threshold1 = J_I_minus_J < threshold_val
                 KER_above_threshold2 = J_I_minus_J > - threshold_val
                 KER_above_threshold = np.logical_and(KER_above_threshold1,KER_above_threshold2)
             #else?
 
             ############# Construction Site #############
-            rows, cols = np.nonzero(KER_above_threshold)
-           # rows, cols = self.find_nonzero(KER_above_threshold)
+            #rows, cols = np.nonzero(KER_above_threshold)
+            rows, cols = self.find_nonzero(KER_above_threshold)
 
             rows = np.expand_dims(rows[0:self.max_sparsity-count],1)
             cols = np.expand_dims(cols[0:self.max_sparsity-count],1)
@@ -309,15 +309,14 @@ class Bhatt_Calculator:
         J_i = np.squeeze(J[indices[ivec],:],1)
         J_i = np.squeeze(J_i,1)
         J_j = np.squeeze(J[jvec,:],1)
-        J_minus_J = J_i - J_j #J_minus_J = J[indices[ivec],:] - J[jvec,:]
+        #J_minus_J = J_i - J_j #J_minus_J = J[indices[ivec],:] - J[jvec,:]
 
         ################################
-       # J_minus_J = np.zeros(jvec.shape)
+        J_minus_J = np.zeros(jvec.shape)
         ################################
 
         # Computing P1, P2
         S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(0,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
-
         if q > 1:
             pass # Add later
         else:
