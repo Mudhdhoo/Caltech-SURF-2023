@@ -8,7 +8,7 @@ class Image:
         # Image set-up
         image = loadmat(os.path.join('images',image_name))[image_name]
 
-        self.image = image / np.max(self.image)    # Normalize image to [0,1]  
+        self.image = image / np.max(image)    # Normalize image to [0,1]  
         self.image_size = self.image.shape
         self.scale = scale
         self.blur = blur

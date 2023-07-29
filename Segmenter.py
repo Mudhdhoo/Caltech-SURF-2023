@@ -2,8 +2,8 @@ import numpy as np
 from Image import Image
 import matplotlib.pyplot as plt
 from Bhatt_Calculator import Bhatt_Calculator
-import time
 from scipy.io import loadmat
+import os
 
 class Segmenter(Bhatt_Calculator):
     """
@@ -79,10 +79,10 @@ class Segmenter(Bhatt_Calculator):
         self.verbose = verbose
 
         # Segmentation Parameters
-        #self.u0 = self.init_u0()     
+        self.u0 = self.init_u0()     
 
         # Triangle 
-        self.u0 = loadmat('u0')['u0'] #########
+        #self.u0 = loadmat('u0')['u0'] #########
 
         # Rectangle
         #self.u0 = np.zeros([7,7]) 
@@ -95,7 +95,6 @@ class Segmenter(Bhatt_Calculator):
         self.margin_proportion = margin_proportion      # sets margin so given proportion of pixels are included
         self.maxiterations = maxiterations      # Max Euler iterations
         self.grad_Bhatt_MC = grad_Bhatt_MC         # Monte Carlo iterations for grad_u Bhatt
-        #self.Bhatt_MC = Bhatt_MC      # Monte Carlo iterations for Bhatt
 
         # Parameters of the optimisation scheme
         self.beta = beta
@@ -293,54 +292,58 @@ class Segmenter(Bhatt_Calculator):
         """
         Live rendering of the segmentation.
         """ 
-        segmentation = u*self.image.image
-        #segmentation = u
+        #segmentation = u*self.image.image
+        segmentation = u
         plt.imshow(segmentation)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('triangle')
-    delta = 2
-    GL_epsilon = 1
-    steps = 100
-    margin_proportion = 0.05
-    maxiterations = 25
-    grad_Bhatt_MC = 10
-    Bhatt_MC = 50
-    sigma = 1e-2
-    beta = 2*1e2
-    gamma = 2*2*1e-2
-    momentum_u = 1e-5
-    threshold_seg = 0.01    # TODO threshold_seg = min(threshold_seg,C);
-    max_sparsity_seg = 62500 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
-    batch_size = 700
-    method = 'random'
-    dirac = 0
-    verbose = True
+    im = Image('heart')
 
-    # delta = 8
-    # GL_epsilon = 1e0
-    # steps = 10
-    # margin_proportion = 0.0225
-    # maxiterations = 100
+    # delta = 2
+    # GL_epsilon = 1
+    # steps = 100
+    # margin_proportion = 0.05
+    # maxiterations = 25
     # grad_Bhatt_MC = 10
-    # Bhatt_MC = 10#50
+    # Bhatt_MC = 50
     # sigma = 1e-2
-    # #sigma = 1e-10
     # beta = 2*1e2
     # gamma = 2*2*1e-2
     # momentum_u = 1e-5
-    # threshold_seg = 0.25    # TODO threshold_seg = min(threshold_seg,C);
-    # max_sparsity_seg = 2000000 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
+    # threshold_seg = 0.01    # TODO threshold_seg = min(threshold_seg,C);
+    # max_sparsity_seg = 62500 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
     # batch_size = 700
     # method = 'random'
     # dirac = 0
     # verbose = True
 
+    delta = 8
+    GL_epsilon = 1e0
+    steps = 10
+    margin_proportion = 0.0225
+    maxiterations = 100
+    grad_Bhatt_MC = 10
+    Bhatt_MC = 25#50
+    sigma = 1e-2
+    #sigma = 1e-10
+    beta = 2*1e2
+    gamma = 2*2*1e-2
+    momentum_u = 1e-5
+    threshold_seg = 0.25    # TODO threshold_seg = min(threshold_seg,C);
+    max_sparsity_seg = 2000000 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
+    batch_size = 700
+    method = 'random'
+    dirac = 0
+    verbose = True
+
     seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose)
     u = seg.segment()
+    #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
+   # wrong_pixels = np.abs(np.sum(ground_truth-u))
+    #print(wrong_pixels)
     plt.imshow(u)
     plt.show()
 

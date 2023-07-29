@@ -167,7 +167,6 @@ class Bhatt_Calculator:
             Amat = np.exp(logC + inv2sigma2 * (J_minus_J + self.sigma * Z0.T)**2)
         A_ij_u_j_mat = Amat * np.squeeze(u_vec[jvec],1) #sparsity x MC
         S_A_ij_u_j_mat = S @ A_ij_u_j_mat #nindex x MC
-        #P1 = ((S*Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC
         P1 = ((S@Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC
         P2 = S_A_ij_u_j_mat/sum1
 
