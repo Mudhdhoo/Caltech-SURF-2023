@@ -4,7 +4,7 @@ import numpy as np
 from scipy.io import loadmat
 
 class Image:
-    def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.01, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
+    def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
         # Image set-up
         image = loadmat(os.path.join('images',image_name))[image_name]
 
@@ -17,6 +17,7 @@ class Image:
         self.is_grey = is_grey
         self.is_binary = is_binary
         self.J = self.make_feature_map()
+        self.y = self.build_y()
 
         # Feature map parameters
         self.KER = KER
@@ -25,20 +26,21 @@ class Image:
         # TODO for reconstruction
         pass
 
-    def noise_image(self):
-        M, N = self.image.shape
-        noise = np.random.normal(0,20,[M,N])
+    def noise_image(self, image):
+        M, N = image.shape
+        noise = np.random.normal(0, self.noise_std, [M,N])
         
-        return self.image + noise
-        #return noise
+        return image + noise
 
     def build_y(self):
+        y = self.image
+
         # Blur the image
         if self.blur:
             y = self.blur_image()
 
         # Add noise
-        y = self.noise_image()
+        y = self.noise_image(y)
 
         return y
         
@@ -52,7 +54,6 @@ class Image:
         M = self.image.shape[0]
         N = self.image.shape[1]
         J = self.image.reshape(M*N, 1)
-       # J = np.flip(J)
 
         return J
 
@@ -62,7 +63,6 @@ class Image:
 
 if __name__ == '__main__':
     im = Image('heart')
-    print(im.image)
-    im.show()
+    plt.imshow(im.y)
     plt.show()
     

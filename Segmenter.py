@@ -1,9 +1,10 @@
 import numpy as np
-from Image import Image
 import matplotlib.pyplot as plt
-from Bhatt_Calculator import Bhatt_Calculator
+from Image import Image
 from scipy.io import loadmat
-import os
+from Bhatt_Calculator import Bhatt_Calculator
+from Segmentation_Params import Segmentation_Params
+from params import *
 
 class Segmenter(Bhatt_Calculator):
     """
@@ -13,93 +14,93 @@ class Segmenter(Bhatt_Calculator):
     image: Image
         Instance of the Image class.
 
-    delta: int
-        Parameter for stopping condition in the MBO scheme. The loop is terminated if
-        sum(U_k+1) - sum(U_k) < delta.
+    seg_params: Segmentation_Params
+        Dataclass containing all the segmentation parameters:
+            delta: int
+                Parameter for stopping condition in the MBO scheme. The loop is terminated if
+                sum(U_k+1) - sum(U_k) < delta.
 
-    GL_epsilon: float
-        Epsilon in Ginzburg-Landau.
+            GL_epsilon: float
+                Epsilon in Ginzburg-Landau.
 
-    steps: int
-        Steps in the semi-implicit Euler scheme for the diffusion.
+            steps: int
+                Steps in the semi-implicit Euler scheme for the diffusion.
 
-    margin_proportion: float
-        Sets margin so given proportion of pixels are included when computing x where V(x)
-        is sufficiently near 1/2.
+            margin_proportion: float
+                Sets margin so given proportion of pixels are included when computing x where V(x)
+                is sufficiently near 1/2.
 
-    maxiterations: int
-        Maximum iterations in the Euler scheme (SDIE).
+            maxiterations: int
+                Maximum iterations in the Euler scheme (SDIE).
 
-    grad_Bhatt_MC: int
-        Number of Monte-Carlo iteration for calculating grad_u_Bhatt.
+            grad_Bhatt_MC: int
+                Number of Monte-Carlo iteration for calculating grad_u_Bhatt.
 
-    Bhatt_MC: int
-        Number of Monte-Carlo iteration for calculating the Bhattacharyya coefficient.
+            Bhatt_MC: int
+                Number of Monte-Carlo iteration for calculating the Bhattacharyya coefficient.
 
-    sigma: float
-        Standarddeviation of the Bhattacharyya kernel K(z).
+            sigma: float
+                Standarddeviation of the Bhattacharyya kernel K(z).
 
-    beta: float
-        Parameter in the optimization scheme. Multiplier of B(J,u).
+            beta: float
+                Parameter in the optimization scheme. Multiplier of B(J,u).
 
-    gamma: float
-        Parameter in the optimization scheme. Multiplier of GL_epsilon(u).
+            gamma: float
+                Parameter in the optimization scheme. Multiplier of GL_epsilon(u).
 
-    momentum_u: float
-        Parameter in the optimization scheme. Multiplier of ||u - u_n||_2^2.
+            momentum_u: float
+                Parameter in the optimization scheme. Multiplier of ||u - u_n||_2^2.
 
-    threshold_seg: float
-        Threshold above which kernel values are determined to be significant in computing P1 and P2.
+            threshold_seg: float
+                Threshold above which kernel values are determined to be significant in computing P1 and P2.
 
-    max_sparsity_seg: int
-        Maximum entries in the sparse matrix when computing P1 and P2.
+            max_sparsity_seg: int
+                Maximum entries in the sparse matrix when computing P1 and P2.
 
-    batch_size: int
-        Size of batches for batch processing when computing P1 and P2.
+            batch_size: int
+                Size of batches for batch processing when computing P1 and P2.
 
-    method: str
-        Method for computing the Gaussian integrals. 'random' or 'quadrature'.
+            method: str
+                Method for computing the Gaussian integrals. 'random' or 'quadrature'.
 
-    dirac: bool
-        Determines if Dirac or Gaussian is used.
+            dirac: bool
+                Determines if Dirac or Gaussian is used.
 
-    verbose: bool
-        Write runtime information to screen if True, otherwise write nothing.
+            verbose: bool
+                Write runtime information to screen if True, otherwise write nothing.
     """
-
-    def __init__(self, image: Image, delta, GL_epsilon, steps, margin_proportion, maxiterations, 
-                grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose) -> None:
-        super().__init__(threshold_seg, Bhatt_MC, max_sparsity_seg, batch_size, sigma, method, verbose)    # Bhattacharyya paramters
+    def __init__(self, image: Image, seg_params: Segmentation_Params) -> None:
+        super().__init__(seg_params.threshold_seg, seg_params.Bhatt_MC, seg_params.max_sparsity_seg, seg_params.batch_size, seg_params.sigma, seg_params.method, seg_params.verbose)    # Bhattacharyya paramters
 
         self.image = image   # The image to segment
 
         # Flags
-        self.method = method
-        self.dirac = dirac
-        self.verbose = verbose
+        self.method = seg_params.method
+        self.dirac = seg_params.dirac
+        self.verbose = seg_params.verbose
 
         # Segmentation Parameters
         self.u0 = self.init_u0()     
 
         # Triangle 
-        #self.u0 = loadmat('u0')['u0'] #########
+       # self.u0 = loadmat('u0')['u0'] #########
 
         # Rectangle
-        #self.u0 = np.zeros([7,7]) 
-        #self.u0[1:6,1:6] =  1
+        # self.u0 = np.zeros([7,7]) 
+        # self.u0[1:6,1:6] =  1
 
-        self.delta = delta;     # stopping condition
-        self.GL_epsilon = GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
+        self.delta = seg_params.delta;     # stopping condition
+        self.GL_epsilon = seg_params.GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
      
-        self.steps = steps      # steps in the semi-implicit Euler scheme for the diffusion
-        self.margin_proportion = margin_proportion      # sets margin so given proportion of pixels are included
-        self.maxiterations = maxiterations      # Max Euler iterations
-        self.grad_Bhatt_MC = grad_Bhatt_MC         # Monte Carlo iterations for grad_u Bhatt
+        self.steps = seg_params.steps      # steps in the semi-implicit Euler scheme for the diffusion
+        self.margin_proportion = seg_params.margin_proportion      # sets margin so given proportion of pixels are included
+        self.maxiterations = seg_params.maxiterations      # Max Euler iterations
+        self.grad_Bhatt_MC = seg_params.grad_Bhatt_MC         # Monte Carlo iterations for grad_u Bhatt
 
         # Parameters of the optimisation scheme
-        self.beta = beta
-        self.gamma = gamma
-        self.momentum_u = momentum_u
+        self.beta = seg_params.beta
+        self.gamma = seg_params.gamma
+        self.momentum_u = seg_params.momentum_u
 
         # Plotting
         self.fig = plt.figure()
@@ -153,17 +154,17 @@ class Segmenter(Bhatt_Calculator):
             print('iteration: '+ str(i))
 
             u_old = u
-            v = self.__force_diffuse(u,u0,a,b,dt,steps,phi,sigma);  # Forced diffusion
+            v = self.__force_diffuse(u, u0, a, b, dt, self.steps, phi, sigma);  # Forced diffusion
 
             #Gradient descent step in Bhatt
-            margin = self.__margin_finder(v,margin_proportion)
+            margin = self.__margin_finder(v, self.margin_proportion)
             v_flattened = v.reshape(M1*N1, 1)
             indices = np.where((np.abs(v_flattened - 0.5)) <= margin)[0]     # Indicies where Bhatt coeff is calculated
             indices = np.expand_dims(indices,1)
 
             if self.beta > 0:     
                 grad = self.__grad_Bhatt_u(J,u,indices,M1,N1)   
-                v2 = v - dt * beta * grad # Can also add "method" argument later
+                v2 = v - dt * self.beta * grad # Can also add "method" argument later
             else:
                 v2 = v
 
@@ -292,8 +293,8 @@ class Segmenter(Bhatt_Calculator):
         """
         Live rendering of the segmentation.
         """ 
-        #segmentation = u*self.image.image
-        segmentation = u
+        segmentation = u*self.image.image
+        #segmentation = u
         plt.imshow(segmentation)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -301,46 +302,9 @@ class Segmenter(Bhatt_Calculator):
 
 if __name__ == '__main__':
     im = Image('heart')
-
-    # delta = 2
-    # GL_epsilon = 1
-    # steps = 100
-    # margin_proportion = 0.05
-    # maxiterations = 25
-    # grad_Bhatt_MC = 10
-    # Bhatt_MC = 50
-    # sigma = 1e-2
-    # beta = 2*1e2
-    # gamma = 2*2*1e-2
-    # momentum_u = 1e-5
-    # threshold_seg = 0.01    # TODO threshold_seg = min(threshold_seg,C);
-    # max_sparsity_seg = 62500 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
-    # batch_size = 700
-    # method = 'random'
-    # dirac = 0
-    # verbose = True
-
-    delta = 8
-    GL_epsilon = 1e0
-    steps = 10
-    margin_proportion = 0.0225
-    maxiterations = 100
-    grad_Bhatt_MC = 10
-    Bhatt_MC = 25#50
-    sigma = 1e-2
-    #sigma = 1e-10
-    beta = 2*1e2
-    gamma = 2*2*1e-2
-    momentum_u = 1e-5
-    threshold_seg = 0.25    # TODO threshold_seg = min(threshold_seg,C);
-    max_sparsity_seg = 2000000 # TODO max_sparsity_seg = min(max_sparsity_seg,(M1*N1)^2);
-    batch_size = 700
-    method = 'random'
-    dirac = 0
-    verbose = True
-
-    seg = Segmenter(im, delta, GL_epsilon, steps, margin_proportion, maxiterations, grad_Bhatt_MC, Bhatt_MC, sigma, beta, gamma, momentum_u, threshold_seg, max_sparsity_seg, batch_size, method, dirac, verbose)
+    seg = Segmenter(im, heart_params_seg)
     u = seg.segment()
+
     #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
    # wrong_pixels = np.abs(np.sum(ground_truth-u))
     #print(wrong_pixels)

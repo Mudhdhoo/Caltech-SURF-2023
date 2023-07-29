@@ -61,3 +61,9 @@ J_minus_J is still not calculated the same
 Works now for simple cases (rect, triangle), but not for heart
 
 Ok the problem seemed to be that I forgot to normalize the heart image to [0,1]. After I did that it worked!!!
+
+------------------------------------------------------------------------------------------
+29 Jul
+
+Store the parameters in a dataclass.
+
