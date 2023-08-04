@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from tabnanny import verbose
 
 @dataclass
 class Segmentation_Params:
@@ -75,4 +76,17 @@ class Segmentation_Params:
     batch_size: int
     method: str
     dirac: bool
+    verbose: bool
+
+@dataclass
+class Reconstruction_Params:
+    momentum_im: float
+    sigma: float
+    batch_size: int
+    alpha: float
+    beta: float
+    gfn_MC: int
+    threshold_gfn: float
+    max_sparsity_gfn: float
+    method: str
     verbose: bool

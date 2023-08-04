@@ -75,6 +75,10 @@ class Bhatt_Calculator:
             Z0 = np.random.randn(MC_iterations,q)
             W0 = np.ones([1,MC_iterations])/MC_iterations
 
+        if self.method == 'quadrature':
+            level_max = MC_iterations
+            
+
         return Z0, W0
 
     def Pcalculator_sparse2(self, J, u_vec, Z0, indices):
@@ -118,9 +122,8 @@ class Bhatt_Calculator:
             # Compute norm squared for the batch
             if q == 1:
                 perm_batch_indices = perm[I_start:I_end+1]
-                randomize_ind = np.array([int(indices[i]) for i in perm_batch_indices])
-
-                J_I_minus_J = np.array([J[i] for i in randomize_ind]) - J_1nq  #this_batch_size x n
+                randomize_ind = indices[perm_batch_indices].reshape(-1,)
+                J_I_minus_J = J[randomize_ind] - J_1nq #this_batch_size x n
                 KER_above_threshold1 = J_I_minus_J < threshold_val
                 KER_above_threshold2 = J_I_minus_J > - threshold_val
                 KER_above_threshold = np.logical_and(KER_above_threshold1,KER_above_threshold2)

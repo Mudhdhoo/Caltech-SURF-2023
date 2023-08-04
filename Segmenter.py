@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import PIL
+import os
 from Image import Image
 from scipy.io import loadmat
 from Bhatt_Calculator import Bhatt_Calculator
-from Segmentation_Params import Segmentation_Params
+from Reconstructor import Reconstructor
+from Parameters import *
 from params import *
 
 class Segmenter(Bhatt_Calculator):
@@ -69,25 +72,24 @@ class Segmenter(Bhatt_Calculator):
             verbose: bool
                 Write runtime information to screen if True, otherwise write nothing.
     """
-    def __init__(self, image: Image, seg_params: Segmentation_Params) -> None:
+    def __init__(self, seg_params: Segmentation_Params) -> None:
         super().__init__(seg_params.threshold_seg, seg_params.Bhatt_MC, seg_params.max_sparsity_seg, seg_params.batch_size, seg_params.sigma, seg_params.method, seg_params.verbose)    # Bhattacharyya paramters
 
-        self.image = image   # The image to segment
-
+       # self.image = image   # The image to segment
+        
         # Flags
         self.method = seg_params.method
         self.dirac = seg_params.dirac
         self.verbose = seg_params.verbose
 
         # Segmentation Parameters
-        self.u0 = self.init_u0()     
+       # self.u0 = self.init_u0()     
 
         # Triangle 
        # self.u0 = loadmat('u0')['u0'] #########
 
         # Rectangle
-        # self.u0 = np.zeros([7,7]) 
-        # self.u0[1:6,1:6] =  1
+        #self.u0 = np.zeros([7,7]) 
 
         self.delta = seg_params.delta;     # stopping condition
         self.GL_epsilon = seg_params.GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
@@ -106,11 +108,11 @@ class Segmenter(Bhatt_Calculator):
         self.fig = plt.figure()
         plt.ion()       # Turn matplotlib interactive mode on
 
-    def init_u0(self):
+    def __init_u0(self, image:Image):
         """
         Creates the initial segmentation of the image.
         """
-        M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
+        M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
         circle_center = np.array([M1/2.5, N1/2])  
         circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
@@ -121,26 +123,33 @@ class Segmenter(Bhatt_Calculator):
 
         return u0
     
-    def segment(self):
+    def segment(self, image):
         """
         Segments the given image using the modified MBO scheme.
         """
-        u = self.__uupdate_MBO(self.u0)
+        # Triangle 
+       # u0 = loadmat('u0')['u0'] #########
+
+        # Rectangle
+        #u0 = np.zeros([7,7]) 
+        u0 = self.__init_u0(image)
+        u = self.__uupdate_MBO(u0, image)
         plt.ioff()  # Turn matplotlib interactive mode off
         print('Finished Segmentation')
+        plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
 
         return u
 
-    def __uupdate_MBO(self, u):
+    def __uupdate_MBO(self, u, image:Image):
         """
         Implements the modified MBO scheme 
         """
-        J = self.image.J
+        J = image.J
         u0 = u
         dt = self.GL_epsilon/self.gamma #       time for the diffusion
         a = self.gamma*self.GL_epsilon#     parameters in the diffusion
         b = 2*self.momentum_u #     parameters in the diffusion
-        M1, N1 = self.image.image_size[0], self.image.image_size[1] # 2D dimension of image
+        M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
 
         # Compute eigendecomposition
         eye_minus_adt_Lap_inv = np.linalg.inv(np.eye(M1) - a*(dt/self.steps)*self.__Lap1D_neu(M1))
@@ -148,7 +157,7 @@ class Segmenter(Bhatt_Calculator):
         sigma, phi = np.linalg.eig(eye_minus_adt_Lap_inv)
         sigma = sigma.reshape(-1,1)
 
-        self.__render(u)
+        self.__render(u, image, 0)
         # Run iterations
         for i in range(0,self.maxiterations):
             print('iteration: '+ str(i))
@@ -172,7 +181,7 @@ class Segmenter(Bhatt_Calculator):
             u = np.heaviside(v2 - 0.5, 0)
 
             # Render the segmentation
-            self.__render(u)
+            self.__render(u, image, i)
 
             # Stopping condition
             dist = np.sum(np.abs(u - u_old))
@@ -289,25 +298,45 @@ class Segmenter(Bhatt_Calculator):
         v[:,1:] = v[:,:-1]
         return v
 
-    def __render(self,u):
+    def __render(self, u, image, iteration):
         """
         Live rendering of the segmentation.
         """ 
-        segmentation = u*self.image.image
+        segmentation = u*image.image
         #segmentation = u
         plt.imshow(segmentation)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.show()
 
+        # if ((iteration+1) % 10) == 0 or iteration == 0:
+        #     print('dasuhd9qwuihdfoiasndoisajdpJOFNSDOIFHOISAHFOIASNODANSO')
+        #     plt.savefig(f'/Applications/Programming/SURF/Results/iteration_{iteration}')
+
 if __name__ == '__main__':
+
     im = Image('heart')
-    seg = Segmenter(im, heart_params_seg)
-    u = seg.segment()
+    # y = im.y
+    # recon_params = Reconstruction_Params(momentum_im = 1,
+    #                                      sigma = 1e-2,
+    #                                      batch_size = 700,
+    #                                      alpha = 1,
+    #                                      beta = 2*1e2,
+    #                                      gfn_MC = 100,
+    #                                      threshold_gfn = 3.5905,
+    #                                      max_sparsity_gfn = 10000000,
+    #                                      method = 'random',
+    #                                      verbose = True
+    #                                      )
+
+    # recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
+    # denoised_im = recon.cheap_reconstruction(y)
+    # im.image = denoised_im
+    seg = Segmenter(heart_params_seg)
+    u = seg.segment(im)
 
     #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
    # wrong_pixels = np.abs(np.sum(ground_truth-u))
     #print(wrong_pixels)
-    plt.imshow(u)
-    plt.show()
-
+    # plt.imshow(u)
+    # plt.show()

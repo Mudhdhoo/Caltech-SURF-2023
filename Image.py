@@ -2,15 +2,16 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
+import PIL
 
 class Image:
-    def __init__(self, image_name, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
+    def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
         # Image set-up
-        image = loadmat(os.path.join('images',image_name))[image_name]
+        if type(image) == str:
+            image = loadmat(os.path.join('images',image))[image]
 
         self.image = image / np.max(image)    # Normalize image to [0,1]  
         self.image_size = self.image.shape
-        self.scale = scale
         self.blur = blur
         self.noise_std = noise_std
         self.blur_std = blur_std
@@ -45,6 +46,7 @@ class Image:
         return y
         
     def resize_image(self):
+        # TODO
         pass
 
     def make_feature_map(self):
@@ -58,11 +60,15 @@ class Image:
         return J
 
     def show(self):
+        """
+        Display the image.
+        """
         plt.imshow(self.image)
         plt.show()
 
 if __name__ == '__main__':
     im = Image('heart')
-    plt.imshow(im.y)
+    plt.imshow(im.image)
     plt.show()
+    #im.show()
     
