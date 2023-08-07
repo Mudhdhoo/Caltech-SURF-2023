@@ -338,5 +338,5 @@ if __name__ == '__main__':
     #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
    # wrong_pixels = np.abs(np.sum(ground_truth-u))
     #print(wrong_pixels)
-    # plt.imshow(u)
-    # plt.show()
+    plt.imshow(u)
+    plt.show()

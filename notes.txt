@@ -67,3 +67,8 @@ Ok the problem seemed to be that I forgot to normalize the heart image to [0,1].
 
 Store the parameters in a dataclass.
 
+------------------------------------------------------------------------------------------
+4 Aug
+
+Need to implement quadrature sampling method to make code faster. Otherwise too slow
+

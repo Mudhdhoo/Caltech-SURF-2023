@@ -59,6 +59,13 @@ class Image:
 
         return J
 
+    def update_image(self, new_image):
+        """
+        Updates the current image with a new one and creates a new feature map.
+        """
+        self.image = new_image
+        self.make_feature_map()
+
     def show(self):
         """
         Display the image.

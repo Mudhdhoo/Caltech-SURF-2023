@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt 
+import os
 from skimage.restoration import denoise_tv_chambolle
 from Bhatt_Calculator import Bhatt_Calculator
 from Image import Image
 from Parameters import Reconstruction_Params
+from scipy.io import loadmat
 
 
 class Reconstructor(Bhatt_Calculator):
@@ -43,6 +45,7 @@ class Reconstructor(Bhatt_Calculator):
         u_vec = u.reshape(-1,1)
         Z0, W0 = self.Z0_calculator(self.gfn_MC, q)
 
+        B_grad_J = self.B_grad_J_integrand(J, u_vec, Z0)
 
     def B_grad_J_integrand(self, J, u_vec, Z0):
         """
@@ -57,15 +60,36 @@ class Reconstructor(Bhatt_Calculator):
         # Identify dimensions
         MC, q = Z0.shape
         n = len(u_vec)
-
         # Evaluate distributions P1,P2, output is n x MC
-        indices = np.arange(0, n)
+        indices = np.arange(0, n).reshape(-1,1)
+        Z0 = np.array([[-4.5000,
+                        -3.6700,
+                        -2.9672,
+                        -2.3257,
+                        -1.7200,
+                        -1.1361,
+                        -0.5651,
+                                0,
+                            0.5651,
+                            1.1361,
+                            1.7200,
+                            2.3257,
+                            2.9672,
+                            3.6700,
+                            4.5000]]).T
+
         P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)
+        # Find indices where u[indices] == 0
+        u_index_0 = np.where(u_vec == 0)
+        u_index_1 = np.where(u_vec == 1)
+        sum0 = np.sum(1 - u_vec)
+        sum1 = n - sum0
+        print(u_index_0)
+      #  fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8)) * repmat(reshape(sigma*Z0,[1 MC q]),[len_uidx0 1 1]
 
     def Imupdate_linear(self):
         pass
 
-    
     def T(self,x):
         # If blur == 0
         return x
@@ -79,7 +103,6 @@ class Reconstructor(Bhatt_Calculator):
 
 if __name__ == '__main__':
     im = Image('heart')
-    y = im.y
     recon_params = Reconstruction_Params(momentum_im = 1,
                                          sigma = 1e-2,
                                          batch_size = 700,
@@ -87,13 +110,16 @@ if __name__ == '__main__':
                                          beta = 2*1e2,
                                          gfn_MC = 100,
                                          threshold_gfn = 3.5905,
-                                         max_sparsity_gfn = 10000000,
+                                         max_sparsity_gfn = 1000000,
                                          method = 'random',
                                          verbose = True
                                          )
 
     recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
-    denoised_im = abs(recon.cheap_reconstruction(y))
-    print(denoised_im)
-    plt.imshow(denoised_im)
-    plt.show()
+    u = loadmat(os.path.join('images','u.mat'))['u']
+    rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
+    im.update_image(rec_image) # Update the image
+    recon.gfn(im, u)
+
+    # plt.imshow(im.image)
+    # plt.show()

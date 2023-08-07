@@ -74,11 +74,17 @@ class Bhatt_Calculator:
         if self.method == 'random':
             Z0 = np.random.randn(MC_iterations,q)
             W0 = np.ones([1,MC_iterations])/MC_iterations
-
+        
         if self.method == 'quadrature':
             level_max = MC_iterations
-            
-
+            if level_max == 1:
+                point_num = 3
+            else: 
+                point_num = 31
+            Z0, W0 = np.polynomial.hermite.hermgauss(point_num)
+            Z0 = Z0.reshape(-1,1)
+            W0 = W0.reshape(1,-1)
+        #print(Z0.shape, W0.shape)
         return Z0, W0
 
     def Pcalculator_sparse2(self, J, u_vec, Z0, indices):
