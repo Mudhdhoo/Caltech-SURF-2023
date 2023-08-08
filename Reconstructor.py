@@ -20,6 +20,10 @@ class Reconstructor(Bhatt_Calculator):
             raise Exception('Reconstruction algorithm must be either "TV", "TGV", "BM3D" or "none".')
         self.algorithm = algorithm
 
+    def reconstruct(self,image:Image, u):
+        g = self.gfn(image, u)
+       # tildeIm = Im - 0.5*beta/momentum_Im * g
+
     def cheap_reconstruction(self, y):
         """
         Cheap initial reconstruction of the image. 
@@ -38,14 +42,39 @@ class Reconstructor(Bhatt_Calculator):
 
         return denoised_im
         
-    def gfn(self, image: Image, u):
+    def gfn(self, image:Image, u):
         M, N = image.image_size
         J = image.J
         n, q = J.shape
         u_vec = u.reshape(-1,1)
         Z0, W0 = self.Z0_calculator(self.gfn_MC, q)
 
-        B_grad_J = self.B_grad_J_integrand(J, u_vec, Z0)
+        W0 = np.array([1.52247580e-09, 1.05911555e-06, 1.00004441e-04, 2.77806884e-03,
+        3.07800339e-02, 1.58488916e-01, 4.12028687e-01, 5.64100309e-01,
+        4.12028687e-01, 1.58488916e-01, 3.07800339e-02, 2.77806884e-03,
+        1.00004441e-04, 1.05911555e-06, 1.52247580e-09])
+
+        Z0 = np.array([[-4.5000,
+                    -3.6700,
+                    -2.9672,
+                    -2.3257,
+                    -1.7200,
+                    -1.1361,
+                    -0.5651,
+                            0,
+                        0.5651,
+                        1.1361,
+                        1.7200,
+                        2.3257,
+                        2.9672,
+                        3.6700,
+                        4.5000]]).T
+
+        fZ0 = self.B_grad_J_integrand(J, u_vec, Z0)
+        gradJ = np.sum(fZ0 * W0.reshape([1, 1, len(W0)]), axis = 2)
+        g = gradJ.reshape([256, 256])
+
+        return g
 
     def B_grad_J_integrand(self, J, u_vec, Z0):
         """
@@ -60,32 +89,34 @@ class Reconstructor(Bhatt_Calculator):
         # Identify dimensions
         MC, q = Z0.shape
         n = len(u_vec)
-        # Evaluate distributions P1,P2, output is n x MC
         indices = np.arange(0, n).reshape(-1,1)
-        Z0 = np.array([[-4.5000,
-                        -3.6700,
-                        -2.9672,
-                        -2.3257,
-                        -1.7200,
-                        -1.1361,
-                        -0.5651,
-                                0,
-                            0.5651,
-                            1.1361,
-                            1.7200,
-                            2.3257,
-                            2.9672,
-                            3.6700,
-                            4.5000]]).T
 
+        # Evaluate distributions P1,P2, output is n x MC
         P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)
+
         # Find indices where u[indices] == 0
-        u_index_0 = np.where(u_vec == 0)
-        u_index_1 = np.where(u_vec == 1)
+        u_index_0 = np.where(u_vec == 0)[0]
+        u_index_1 = np.where(u_vec == 1)[0]
         sum0 = np.sum(1 - u_vec)
         sum1 = n - sum0
-        print(u_index_0)
-      #  fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8)) * repmat(reshape(sigma*Z0,[1 MC q]),[len_uidx0 1 1]
+        
+        # Evaluate fout at each index
+        fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum0), 1,1]))
+        fout_u1 = 0.5 * self.sigma**(-2) * (1/sum1) * np.sqrt(P1_Z[u_index_1,:] / (P2_Z[u_index_1,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum1), 1,1]))
+
+        #Combine elements of fout
+        if q == 1:
+            fout = np.zeros([n, MC])
+            fout[u_index_0, :] = fout_u0
+            fout[u_index_1, :] = fout_u1
+            fout = fout.reshape([n, q, MC])
+        else:
+            fout = np.zeros([n, MC, q])
+            fout[u_index_0, :, :] = fout_u0
+            fout[u_index_1, :, :] = fout_u1
+            fout = fout.reshape([n, q, MC])
+
+        return fout
 
     def Imupdate_linear(self):
         pass
@@ -108,10 +139,10 @@ if __name__ == '__main__':
                                          batch_size = 700,
                                          alpha = 1,
                                          beta = 2*1e2,
-                                         gfn_MC = 100,
+                                         gfn_MC = 3,
                                          threshold_gfn = 3.5905,
                                          max_sparsity_gfn = 1000000,
-                                         method = 'random',
+                                         method = 'quadrature',
                                          verbose = True
                                          )
 
