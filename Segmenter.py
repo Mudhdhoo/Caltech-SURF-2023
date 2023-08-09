@@ -309,10 +309,6 @@ class Segmenter(Bhatt_Calculator):
         self.fig.canvas.flush_events()
         plt.show()
 
-        # if ((iteration+1) % 10) == 0 or iteration == 0:
-        #     print('dasuhd9qwuihdfoiasndoisajdpJOFNSDOIFHOISAHFOIASNODANSO')
-        #     plt.savefig(f'/Applications/Programming/SURF/Results/iteration_{iteration}')
-
 if __name__ == '__main__':
 
     im = Image('heart')

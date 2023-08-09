@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import os
+import pytv
 from skimage.restoration import denoise_tv_chambolle
 from Bhatt_Calculator import Bhatt_Calculator
 from Image import Image
@@ -21,8 +22,12 @@ class Reconstructor(Bhatt_Calculator):
         self.algorithm = algorithm
 
     def reconstruct(self,image:Image, u):
+        im = image.image
+
+        # Compute linearization
         g = self.gfn(image, u)
-       # tildeIm = Im - 0.5*beta/momentum_Im * g
+        tildeIm = im - 0.5*self.beta/self.momentum_Im * g
+        
 
     def cheap_reconstruction(self, y):
         """
@@ -150,7 +155,7 @@ if __name__ == '__main__':
     u = loadmat(os.path.join('images','u.mat'))['u']
     rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
     im.update_image(rec_image) # Update the image
-    recon.gfn(im, u)
+    recon.reconstruct(im, u)
 
     # plt.imshow(im.image)
     # plt.show()
