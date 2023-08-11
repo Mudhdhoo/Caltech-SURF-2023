@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import os
-import pytv
 from skimage.restoration import denoise_tv_chambolle
 from Bhatt_Calculator import Bhatt_Calculator
 from Image import Image
@@ -270,6 +269,6 @@ if __name__ == '__main__':
     rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
     im.update_image(rec_image) # Update the image
     new_im = recon.reconstruct(im, u)
-
-    # plt.imshow(im.image)
-    # plt.show()
+   # print(new_im.shape)
+    plt.imshow(new_im)
+    plt.show()

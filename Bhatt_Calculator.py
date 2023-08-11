@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 from numpy.matlib import repmat
+from utils import *
 
 # Make this class private? Add verbose function?
 class Bhatt_Calculator:
