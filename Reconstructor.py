@@ -7,7 +7,7 @@ from Bhatt_Calculator import Bhatt_Calculator
 from Image import Image
 from Parameters import Reconstruction_Params
 from scipy.io import loadmat
-
+from scipy.sparse import diags, eye, kron
 
 class Reconstructor(Bhatt_Calculator):
     def __init__(self, recon_params: Reconstruction_Params, algorithm: str, TV_weight = 1) -> None:
@@ -17,17 +17,23 @@ class Reconstructor(Bhatt_Calculator):
         self.beta = recon_params.beta
         self.TV_weight = TV_weight
         self.gfn_MC = recon_params.gfn_MC
+        self.reg_a = recon_params.reg_a
+        self.reg_epsilon = recon_params.reg_epsilon
+        self.y = None
         if algorithm not in ['TV', 'TGV', 'BM3D', 'none']:
             raise Exception('Reconstruction algorithm must be either "TV", "TGV", "BM3D" or "none".')
         self.algorithm = algorithm
 
     def reconstruct(self,image:Image, u):
         im = image.image
+        self.y = image.y
 
         # Compute linearization
         g = self.gfn(image, u)
         tildeIm = im - 0.5*self.beta/self.momentum_Im * g
-        
+        im = self.Imupdate_linear(im, tildeIm)
+
+        return im
 
     def cheap_reconstruction(self, y):
         """
@@ -123,19 +129,125 @@ class Reconstructor(Bhatt_Calculator):
 
         return fout
 
-    def Imupdate_linear(self):
-        pass
+    def Imupdate_linear(self, im_old, tilde_im):
+        M, N = im_old.shape
+        D1, D2 = self.grad_forward(im_old)        
+        l = len(im_old.shape)
 
-    def T(self,x):
+        im_new = self.primal_dual(im_old, 4*self.momentum_Im, tilde_im, D1, D2, M, N, l)
+
+        return im_new
+
+    def grad_forward(self,u):
+        # Forward difference
+        M,N = u.shape
+
+        one = np.ones([M])
+        one[-1] = 0         # Boundary conditions
+        D1 = diags([-one, one], [0, 1], shape = [M,M])
+        D2 = diags([-one, one], [0, 1], shape = [N,N])
+
+        D1 = kron(eye(N), D1)
+        D2 = kron(D2, eye(M))
+
+        return D1, D2
+
+    def primal_dual(self, x, mu, tildeIm, D1, D2, M, N, l):
+        niter = 500
+        theta = 1
+        tol = 1e-2
+        L = 8
+
+        tau   = 0.99/L
+        sigma0 = 0.99/(tau*L)
+        gamma = 0.5*mu
+
+        xhat   = x
+        y      = self.K(x, D1, D2, M, N, l)
+        xstar  = self.KS(y, D1, D2, M, N, l)
+        res    = np.zeros([niter,1])
+
+        for iter in range(0,niter):
+            x_old     = x
+            y_old     = y
+            Kx_old    = self.K(x, D1, D2, M, N, l)
+            xstar_old = xstar
+            
+            # DUAL PROBLEM
+            Kx_hat = self.K(xhat, D1, D2, M, N, l)
+            y      = self.proxFS(y + sigma0*Kx_hat, sigma0)
+            # PRIMAL PROBLEM
+            xstar = self.KS(y, D1, D2, M, N, l)
+            x     = self.proxG(x-tau*xstar,tau, tildeIm)
+            # EXTRAPOLATION
+            xhat = x + theta * (x-x_old)
+
+            # ACCELERATION
+            theta = 1 / np.sqrt(1+2*gamma*tau)
+            tau   = theta*tau
+            sigma0 = sigma0/theta
+
+            # primal residual
+            p_res = (x_old-x)/tau - (xstar_old-xstar)
+            p = np.sum(abs(p_res))
+            # dual residual
+            d_res = (y_old-y)/sigma0 - (Kx_old-Kx_hat)
+            d = np.sum(abs(d_res))
+            
+            res[iter] = (np.sum(p)+np.sum(d)) / np.size(x)
+
+            if res[iter] < tol:
+                break
+        
+        return x
+    
+    def grad_channel(self,u, D1, D2, M, N):
+        u = u.reshape(-1,1)
+        return np.reshape(np.concatenate((D1@u, D2@u),1), [M, N, 2])
+        #return np.reshape(np.concatenate((D1@u, D2@u),1), [2, M, N])
+
+    def div_channel(self,v, D1, D2, M, N):
+        return np.reshape(D1.T @ np.reshape(v[:,:,0], [M*N, 1]) + D2.T @ np.reshape(v[:,:,1], [M*N, 1]), [M, N])
+
+    def K(self, u, D1, D2, M, N, l):
+        if l > 2:
+            return np.concatenate((self.grad_channel(u[:,:,0],D1,D2,M,N), self.grad_channel(u[:,:,0],D1,D2,M,N), self.grad_channel(u[:,:,0],D1,D2,M,N)), 2)
+        
+        return self.grad_channel(u, D1, D2, M, N)
+
+    def KS(self, v, D1, D2, M, N, l):
+        if l > 2:
+            return np.concatenate((self.div_channel(v[:,:,0:2], D1, D2, M, N), self.div_channel(v[:,:,2:4], D1, D2, M, N), self.div_channel(v[:,:,4:6], D1, D2, M, N)))
+
+        return self.div_channel(v[:,:,0:2], D1, D2, M, N)
+
+    def proxFS(self, y, sigma0):
+        ######## Change the last parameter to np.stack to be dynamic not hardcoded
+        return (y / (1 + sigma0*self.reg_epsilon)) / np.stack((np.maximum(1, self.norms(y / (1 + sigma0*self.reg_epsilon), 2, 2) / self.reg_a), np.maximum(1, self.norms(y / (1 + sigma0*self.reg_epsilon), 2, 2) / self.reg_a)), 2)
+
+    def proxG(self, q, tau, tildeIm):
+        return self.Ainv(2*self.alpha*self.Tadj(self.y) + 2*self.momentum_Im*tildeIm + q/tau, tau)
+
+    def T(self, x):
         # If blur == 0
         return x
     
-    def Tadj(self,x):
+    def Tadj(self, x):
         # if blur == 0
         return x
 
     def Ainv(self, x, p):
         return x / (1/p + 2*self.alpha + 2*self.momentum_Im) 
+
+    def norms(self, z, p, dir):
+        if p == 1:
+            y = np.sum(abs(z),dir)
+        elif p == 'inf':
+            y = np.max(z.reshape(-1,1))
+        else:
+            y = np.sum(z**p, dir)**(1/p)
+
+        return y
 
 if __name__ == '__main__':
     im = Image('heart')
@@ -147,6 +259,8 @@ if __name__ == '__main__':
                                          gfn_MC = 3,
                                          threshold_gfn = 3.5905,
                                          max_sparsity_gfn = 1000000,
+                                         reg_a = 2e-1,
+                                         reg_epsilon = 0.01,
                                          method = 'quadrature',
                                          verbose = True
                                          )
@@ -155,7 +269,7 @@ if __name__ == '__main__':
     u = loadmat(os.path.join('images','u.mat'))['u']
     rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
     im.update_image(rec_image) # Update the image
-    recon.reconstruct(im, u)
+    new_im = recon.reconstruct(im, u)
 
     # plt.imshow(im.image)
     # plt.show()

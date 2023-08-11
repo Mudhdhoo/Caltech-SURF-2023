@@ -7,6 +7,7 @@ class Segmentation_Params:
     Dataclass for storing the segmentation parameters.
     
     ------------ Parameters ------------
+    
     delta: int
         Parameter for stopping condition in the MBO scheme. The loop is terminated if
         sum(U_k+1) - sum(U_k) < delta.
@@ -88,5 +89,7 @@ class Reconstruction_Params:
     gfn_MC: int
     threshold_gfn: float
     max_sparsity_gfn: float
+    reg_a: float
+    reg_epsilon: float
     method: str
     verbose: bool
