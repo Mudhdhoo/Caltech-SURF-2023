@@ -1,4 +1,4 @@
-from tabnanny import verbose
+import matplotlib.pyplot as plt
 import numpy as np
 from Segmenter import Segmenter
 from Reconstructor import Reconstructor
@@ -60,6 +60,10 @@ class Joint_Optimizer:
             u = self.segmenter.segment(u, self.image)      # Perform segmentation
             new_im = self.reconstructor.reconstruct(self.image, u)      # Perform reconstruction
             self.image.update_image(new_im)     # Update the reconstructed image
+        
+        plt.ioff()
+    
+        return u, new_im
 
     def render(self):
         pass
@@ -67,8 +71,9 @@ class Joint_Optimizer:
 if __name__ == '__main__':
     image = Image('heart')
     optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True)
-    optimizer.run()
-
+    u, im = optimizer.run()
+    plt.imshow(u)
+    plt.show()
 
         
         

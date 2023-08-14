@@ -134,7 +134,7 @@ class Segmenter(Bhatt_Calculator):
         #u0 = np.zeros([7,7]) 
         #u0 = self.__init_u0(image)
         u = self.__uupdate_MBO(u0, image)
-        plt.ioff()  # Turn matplotlib interactive mode off
+       # plt.ioff()  # Turn matplotlib interactive mode off
         print('Finished Segmentation')
         #plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
 
