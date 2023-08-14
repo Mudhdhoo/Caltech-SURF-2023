@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import PIL
-import os
 from Image import Image
 from scipy.io import loadmat
 from Bhatt_Calculator import Bhatt_Calculator
@@ -14,8 +12,6 @@ class Segmenter(Bhatt_Calculator):
     Segmeter class handling the image segmentation. Inherits from Bhatt_Calculator class.
 
     ------------ Parameters ------------
-    image: Image
-        Instance of the Image class.
 
     seg_params: Segmentation_Params
         Dataclass containing all the segmentation parameters:
@@ -46,13 +42,13 @@ class Segmenter(Bhatt_Calculator):
                 Standarddeviation of the Bhattacharyya kernel K(z).
 
             beta: float
-                Parameter in the optimization scheme. Multiplier of B(J,u).
+                Parameter in the optimization scheme: beta * B(J,u).
 
             gamma: float
-                Parameter in the optimization scheme. Multiplier of GL_epsilon(u).
+                Parameter in the optimization scheme: gamma * GL_epsilon(u).
 
             momentum_u: float
-                Parameter in the optimization scheme. Multiplier of ||u - u_n||_2^2.
+                Parameter in the optimization scheme: momentum_u * ||u - u_n||_2^2.
 
             threshold_seg: float
                 Threshold above which kernel values are determined to be significant in computing P1 and P2.
@@ -136,6 +132,7 @@ class Segmenter(Bhatt_Calculator):
         u = self.__uupdate_MBO(u0, image)
        # plt.ioff()  # Turn matplotlib interactive mode off
         print('Finished Segmentation')
+
         #plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
 
         return u
@@ -271,7 +268,7 @@ class Segmenter(Bhatt_Calculator):
         """
         Finds the x such that the number of pixels that has a distance to 0.5 less than x is almost
         equal to some proportion of the pixels, i.e find |sum( abs(v-0.5) < x,'all') - proportion * numel(v)| < 10.
-        Using interval bisection
+        Using interval bisection.
         """
         N = np.size(v)
         v = v.reshape(N,1) - 0.5
@@ -291,10 +288,16 @@ class Segmenter(Bhatt_Calculator):
         return margin
 
     def __shift_left(self, v):
+        """
+        Shift the column of a matrix left with replication padding.
+        """
         v[:,:-1] = v[:,1:]
         return v
 
     def __shift_right(self, v):
+        """
+        Shift the column of a matrix right with replication padding.
+        """
         v[:,1:] = v[:,:-1]
         return v
 

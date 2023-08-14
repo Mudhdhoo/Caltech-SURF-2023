@@ -72,3 +72,12 @@ Store the parameters in a dataclass.
 
 Need to implement quadrature sampling method to make code faster. Otherwise too slow
 
+------------------------------------------------------------------------------------------
+14 Aug
+
+Entire reconstruction-segmentation pipeline seems to be working. 
+Need to:
+finish implement gaussian quadrature.
+Revise code and all theory
+Start poster
+

@@ -38,9 +38,9 @@ class Joint_Optimizer:
         """
         compute cheap reconstruction
         compute initial contour
-        for i in iterations:
-            compute segmentation¨
-            compute reconstruction
+        for iteration in iterations do:
+            compute segmentation
+            compute reconstruction based on segmentaion
             update image with new reconstruction
         """
         # Pre-processing cheap reconstruction
@@ -64,9 +64,6 @@ class Joint_Optimizer:
         plt.ioff()
     
         return u, new_im
-
-    def render(self):
-        pass
 
 if __name__ == '__main__':
     image = Image('heart')

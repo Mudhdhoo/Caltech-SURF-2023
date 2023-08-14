@@ -9,6 +9,51 @@ from scipy.io import loadmat
 from scipy.sparse import diags, eye, kron
 
 class Reconstructor(Bhatt_Calculator):
+    """
+    Reconstructor class handling the image segmentation. Inherits from Bhatt_Calculator class.
+
+    ------------ Parameters ------------
+
+    recon_params: Reconstuction_Params
+        Dataclass containing all the reconstruction parameter:
+            momentum_Im: float
+                Parameter of the optimization scheme: momentum_Im * ||I - I_n||^2_2
+
+            alpha: float
+                Parameter of the optimization scheme: alpha * ||T(I) - y||_F^2
+
+            beta: float
+                Parameter of the optimization scheme: beta * B(F(I), u_n)
+
+            gfn_MC: int
+                Number of Monte-Carlo samples to compute g.
+
+            reg_a: float
+                Hyperparameter for the Primal-Dual algorithm.
+
+            reg_epsilon: float
+                Hyperparameter for the Primal-Dual algorithm.
+
+            threshold_gfn: float
+                Threshold above which kernel values are determined to be significant in computing P1 and P2.
+
+            max_sparsity_gfn: float
+                Maximum entries in the sparse matrix when computing P1 and P2.
+
+            method: str
+                Method for computing the gaussian integrals. Either random or quadrature. Samples random points
+                if "random". Samples from a Gauss-Hermite quadrature of "quadrature"'
+
+            verbose: Bool
+                Write runtime information to screen if True, otherwise write nothing.
+
+    algorithm: str
+        The algorithm used for cheap reconstruction.
+
+    TV_weight: float
+        Hyperparameter for the TV-denoising algorithm.
+        
+    """
     def __init__(self, recon_params: Reconstruction_Params, algorithm: str, TV_weight = 1) -> None:
         super().__init__(recon_params.threshold_gfn, 25, recon_params.max_sparsity_gfn, recon_params.batch_size, recon_params.sigma, recon_params.method, recon_params.verbose)
         self.momentum_Im = recon_params.momentum_im
@@ -269,6 +314,5 @@ if __name__ == '__main__':
     rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
     im.update_image(rec_image) # Update the image
     new_im = recon.reconstruct(im, u)
-   # print(new_im.shape)
     plt.imshow(new_im)
     plt.show()
