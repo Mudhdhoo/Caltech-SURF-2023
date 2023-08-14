@@ -5,20 +5,23 @@ from scipy.io import loadmat
 import PIL
 
 class Image:
-    def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1) -> None:
+    def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1, build_y = True) -> None:
         # Image set-up
         if type(image) == str:
             image = loadmat(os.path.join('images',image))[image]
+            image = image / np.max(image)       # Normalize image to [0,1]
 
-        self.image = image / np.max(image)    # Normalize image to [0,1]  
+        self.image = image
         self.image_size = self.image.shape
         self.blur = blur
         self.noise_std = noise_std
         self.blur_std = blur_std
         self.is_grey = is_grey
         self.is_binary = is_binary
+        if build_y:
+            self.image = self.build_y()
         self.J = self.make_feature_map()
-        self.y = self.build_y()
+        self.y = self.image
 
         # Feature map parameters
         self.KER = KER
@@ -55,9 +58,9 @@ class Image:
         """
         M = self.image.shape[0]
         N = self.image.shape[1]
-        J = self.image.reshape(M*N, 1)
+        self.J = self.image.reshape(M*N, 1)
 
-        return J
+       # return J
 
     def update_image(self, new_image):
         """
@@ -75,7 +78,8 @@ class Image:
 
 if __name__ == '__main__':
     im = Image('heart')
-    plt.imshow(im.image)
+    plt.imshow(im.make_feature_map().reshape(256,256))
+    #plt.imshow(im.image)
     plt.show()
     #im.show()
     

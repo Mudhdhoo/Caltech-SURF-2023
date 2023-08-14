@@ -108,7 +108,7 @@ class Segmenter(Bhatt_Calculator):
         self.fig = plt.figure()
         plt.ion()       # Turn matplotlib interactive mode on
 
-    def __init_u0(self, image:Image):
+    def init_u0(self, image:Image):
         """
         Creates the initial segmentation of the image.
         """
@@ -123,7 +123,7 @@ class Segmenter(Bhatt_Calculator):
 
         return u0
     
-    def segment(self, image):
+    def segment(self, u0, image):
         """
         Segments the given image using the modified MBO scheme.
         """
@@ -132,11 +132,11 @@ class Segmenter(Bhatt_Calculator):
 
         # Rectangle
         #u0 = np.zeros([7,7]) 
-        u0 = self.__init_u0(image)
+        #u0 = self.__init_u0(image)
         u = self.__uupdate_MBO(u0, image)
         plt.ioff()  # Turn matplotlib interactive mode off
         print('Finished Segmentation')
-        plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
+        #plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
 
         return u
 
@@ -230,7 +230,7 @@ class Segmenter(Bhatt_Calculator):
 
     def __grad_Bhatt_u(self,J,u,indices,M1,N1):
         """
-        Computes the first variation of the Bhattacharyya coefficient
+        Computes the first variation of the Bhattacharyya coefficient.
         """
         # Compute 0.5*(V_1^-1 + V_2^-2)*B(J,u)
         n,q = J.shape
@@ -310,29 +310,30 @@ class Segmenter(Bhatt_Calculator):
         plt.show()
 
 if __name__ == '__main__':
-
     im = Image('heart')
-    # y = im.y
-    # recon_params = Reconstruction_Params(momentum_im = 1,
-    #                                      sigma = 1e-2,
-    #                                      batch_size = 700,
-    #                                      alpha = 1,
-    #                                      beta = 2*1e2,
-    #                                      gfn_MC = 100,
-    #                                      threshold_gfn = 3.5905,
-    #                                      max_sparsity_gfn = 10000000,
-    #                                      method = 'random',
-    #                                      verbose = True
-    #                                      )
+    recon_params = Reconstruction_Params(momentum_im = 1,
+                                         sigma = 1e-2,
+                                         batch_size = 700,
+                                         alpha = 1,
+                                         beta = 2*1e2,
+                                         gfn_MC = 3,
+                                         threshold_gfn = 3.5905,
+                                         max_sparsity_gfn = 1000000,
+                                         reg_a = 2e-1,
+                                         reg_epsilon = 0.01,
+                                         method = 'quadrature',
+                                         verbose = True
+                                         )
 
-    # recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
-    # denoised_im = recon.cheap_reconstruction(y)
-    # im.image = denoised_im
+    recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
+    denoised_im = recon.cheap_reconstruction(im.image)
+    im.update_image(denoised_im)
     seg = Segmenter(heart_params_seg)
-    u = seg.segment(im)
+    u0 = seg.init_u0(im)
+    u = seg.segment(u0, im)
 
     #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
    # wrong_pixels = np.abs(np.sum(ground_truth-u))
-    #print(wrong_pixels)
+   # print(im.image)
     plt.imshow(u)
     plt.show()

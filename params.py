@@ -1,4 +1,4 @@
-from Parameters import Segmentation_Params
+from Parameters import Segmentation_Params, Reconstruction_Params
 
 heart_params_seg = Segmentation_Params(delta = 8,
                                     GL_epsilon = 1e0,
@@ -71,5 +71,19 @@ rectangle_params_seg = Segmentation_Params(delta = 2,
                                     method = 'random',
                                     dirac = 0,
                                     verbose = True)
+
+recon_params = Reconstruction_Params(momentum_im = 1,
+                                    sigma = 1e-2,
+                                    batch_size = 700,
+                                    alpha = 1,
+                                    beta = 2*1e2,
+                                    gfn_MC = 3,
+                                    threshold_gfn = 3.5905,
+                                    max_sparsity_gfn = 1000000,
+                                    reg_a = 2e-1,
+                                    reg_epsilon = 0.01,
+                                    method = 'quadrature',
+                                    verbose = True
+                                    )
 
 
