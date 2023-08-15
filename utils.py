@@ -8,15 +8,16 @@ def comp_next(n, k, a, more, h, t ):
             a = [n]
         else:
             a[0] = n
-            a[1:k+1] = 0
+        a.extend([0]*(k-1))
     else:
         if 1 < t:
             h = 0
         
         h = h + 1
-        t = a[h]
+        t = a[h-1]
+        a[h-1] = 0
         a[0] = t - 1
-        a[h+1] = a[h+1] + 1
+        a[h] = a[h] + 1
 
     if a[k-1] == n:
         more = False
@@ -35,7 +36,7 @@ def level_to_order_open(dim_num, level):
         else:
             order[dim,0] = 2**(level[dim]+1) - 1
 
-    return order[0]
+    return order
 
 def sparse_grid_herm_size(dim_num, level_max):
     if level_max == 0:
@@ -63,9 +64,7 @@ def sparse_grid_herm_size(dim_num, level_max):
             if not more:
                 break
 
-    return point_num
+    return int(point_num)
 
 if __name__ == '__main__':
-    level_1d, more, h, t = comp_next(1, 2, [], False, 0, 0)
-  #  order_1d = level_to_order_open(1,[1])
-    #print(order_1d)
+    print(sparse_grid_herm_size(5,4))

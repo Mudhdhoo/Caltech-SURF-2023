@@ -78,8 +78,7 @@ class Image:
 
 if __name__ == '__main__':
     im = Image('heart')
-    plt.imshow(im.make_feature_map().reshape(256,256))
-    #plt.imshow(im.image)
+    plt.imshow(im.image)
     plt.show()
     #im.show()
     

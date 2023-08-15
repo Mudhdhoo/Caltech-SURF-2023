@@ -81,3 +81,8 @@ finish implement gaussian quadrature.
 Revise code and all theory
 Start poster
 
+------------------------------------------------------------------------------------------
+15 Aug
+
+Issue with sparse_grid_herm_size() seems to be when q > 1, otherwise works fine.
+

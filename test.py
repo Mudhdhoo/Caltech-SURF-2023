@@ -5,7 +5,7 @@ from Image import Image
 
 if __name__ == '__main__':
     image = Image('heart')
-    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True)
+    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 3, verbose = True)
     u, im = optimizer.run()
     plt.imshow(u)
     plt.show()

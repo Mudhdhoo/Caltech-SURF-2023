@@ -78,14 +78,11 @@ class Bhatt_Calculator:
         
         if self.method == 'quadrature':
             level_max = MC_iterations
-            if level_max == 1:
-                point_num = 3
-            else: 
-                point_num = 31
+            point_num = sparse_grid_herm_size(q, level_max)
             Z0, W0 = np.polynomial.hermite.hermgauss(point_num)
             Z0 = Z0.reshape(-1,1)
             W0 = W0.reshape(1,-1)
-        #print(Z0.shape, W0.shape)
+
         return Z0, W0
 
     def Pcalculator_sparse2(self, J, u_vec, Z0, indices):

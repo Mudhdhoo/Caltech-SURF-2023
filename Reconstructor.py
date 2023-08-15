@@ -52,7 +52,7 @@ class Reconstructor(Bhatt_Calculator):
 
     TV_weight: float
         Hyperparameter for the TV-denoising algorithm.
-        
+
     """
     def __init__(self, recon_params: Reconstruction_Params, algorithm: str, TV_weight = 1) -> None:
         super().__init__(recon_params.threshold_gfn, 25, recon_params.max_sparsity_gfn, recon_params.batch_size, recon_params.sigma, recon_params.method, recon_params.verbose)
@@ -103,30 +103,8 @@ class Reconstructor(Bhatt_Calculator):
         n, q = J.shape
         u_vec = u.reshape(-1,1)
         Z0, W0 = self.Z0_calculator(self.gfn_MC, q)
-
-        W0 = np.array([1.52247580e-09, 1.05911555e-06, 1.00004441e-04, 2.77806884e-03,
-        3.07800339e-02, 1.58488916e-01, 4.12028687e-01, 5.64100309e-01,
-        4.12028687e-01, 1.58488916e-01, 3.07800339e-02, 2.77806884e-03,
-        1.00004441e-04, 1.05911555e-06, 1.52247580e-09])
-
-        Z0 = np.array([[-4.5000,
-                    -3.6700,
-                    -2.9672,
-                    -2.3257,
-                    -1.7200,
-                    -1.1361,
-                    -0.5651,
-                            0,
-                        0.5651,
-                        1.1361,
-                        1.7200,
-                        2.3257,
-                        2.9672,
-                        3.6700,
-                        4.5000]]).T
-
         fZ0 = self.B_grad_J_integrand(J, u_vec, Z0)
-        gradJ = np.sum(fZ0 * W0.reshape([1, 1, len(W0)]), axis = 2)
+        gradJ = np.sum(fZ0 * W0.reshape([1, 1, len(W0[0])]), axis = 2)
         g = gradJ.reshape([256, 256])
 
         return g
