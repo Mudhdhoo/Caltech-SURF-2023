@@ -272,7 +272,6 @@ class Reconstructor(Bhatt_Calculator):
         return y
 
 if __name__ == '__main__':
-    im = Image('heart')
     recon_params = Reconstruction_Params(momentum_im = 1,
                                          sigma = 1e-2,
                                          batch_size = 700,
@@ -286,11 +285,13 @@ if __name__ == '__main__':
                                          method = 'quadrature',
                                          verbose = True
                                          )
-
+    im = Image('heart')
     recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
     u = loadmat(os.path.join('images','u.mat'))['u']
     rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
     im.update_image(rec_image) # Update the image
     new_im = recon.reconstruct(im, u)
-    plt.imshow(new_im)
+    fig, axs = plt.subplots(1,2)
+    axs[1].imshow(new_im)
+    axs[0].imshow(im.image)
     plt.show()

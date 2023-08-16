@@ -66,5 +66,24 @@ def sparse_grid_herm_size(dim_num, level_max):
 
     return int(point_num)
 
+def dice(u, ground_truth):
+    """
+    Computes the Sorensen-Dice coefficient of a segmentation relative to a known ground
+    truth.
+    """ 
+    if type(ground_truth) != np.ndarray:
+        return 0
+
+    tp = np.sum(u * ground_truth)       # Number of true positives
+    fp = np.sum(u * (1-ground_truth))   # Number of false positives
+    fn = np.sum((1-u) * ground_truth)   # Number of false negatives
+
+    dice = 2*tp / (2*tp + fp + fn)
+
+    return dice
+
 if __name__ == '__main__':
-    print(sparse_grid_herm_size(5,4))
+    u = np.array([[0,0,0],[1,1,0],[0,1,1],[0,0,0]])
+    gt = np.array([[0,0,0],[1,1,0],[1,1,0],[0,0,0]])
+    print(dice(u,gt))
+    print(6)

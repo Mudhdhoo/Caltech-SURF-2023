@@ -27,12 +27,13 @@ class Joint_Optimizer:
         True for information output, False otherwise.
     """
 
-    def __init__(self, seg_params:Segmentation_Params, recon_params:Reconstruction_Params, image:Image, iterations:int, verbose = False) -> None:
+    def __init__(self, seg_params:Segmentation_Params, recon_params:Reconstruction_Params, image:Image, iterations:int, verbose = False, plotting = True) -> None:
         self.segmenter = Segmenter(seg_params)
         self.reconstructor = Reconstructor(recon_params, 'TV')
         self.image = image
         self.iterations = iterations
         self.verbose = verbose
+        self.plotting = plotting
 
     def run(self):
         """
@@ -43,6 +44,7 @@ class Joint_Optimizer:
             compute reconstruction based on segmentaion
             update image with new reconstruction
         """
+
         # Pre-processing cheap reconstruction
         y = self.image.image
         Im0 = self.reconstructor.cheap_reconstruction(y)
@@ -57,17 +59,17 @@ class Joint_Optimizer:
             if self.verbose:
                 print(f'Main loop iteration {iteration}')
 
-            u = self.segmenter.segment(u, self.image)      # Perform segmentation
+            u = self.segmenter.segment(u, self.image, self.plotting)      # Perform segmentation
             new_im = self.reconstructor.reconstruct(self.image, u)      # Perform reconstruction
             self.image.update_image(new_im)     # Update the reconstructed image
         
         plt.ioff()
-    
+
         return u, new_im
 
 if __name__ == '__main__':
     image = Image('heart')
-    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True)
+    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True, plotting = True)
     u, im = optimizer.run()
     plt.imshow(u)
     plt.show()

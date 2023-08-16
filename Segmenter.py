@@ -1,11 +1,14 @@
+from turtle import color
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from Image import Image
 from scipy.io import loadmat
 from Bhatt_Calculator import Bhatt_Calculator
 from Reconstructor import Reconstructor
 from Parameters import *
 from params import *
+from utils import dice
 
 class Segmenter(Bhatt_Calculator):
     """
@@ -101,7 +104,8 @@ class Segmenter(Bhatt_Calculator):
         self.momentum_u = seg_params.momentum_u
 
         # Plotting
-        self.fig = plt.figure()
+        self.dice_score = []
+        self.fig, self.axs = plt.subplots(2,2)
         plt.ion()       # Turn matplotlib interactive mode on
 
     def init_u0(self, image:Image):
@@ -110,7 +114,7 @@ class Segmenter(Bhatt_Calculator):
         """
         M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
         circle_center = np.array([M1/2.5, N1/2])  
-        circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
+        circle_radius = N1/4 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
@@ -119,7 +123,7 @@ class Segmenter(Bhatt_Calculator):
 
         return u0
     
-    def segment(self, u0, image):
+    def segment(self, u0, image, plotting = True):
         """
         Segments the given image using the modified MBO scheme.
         """
@@ -129,15 +133,18 @@ class Segmenter(Bhatt_Calculator):
         # Rectangle
         #u0 = np.zeros([7,7]) 
         #u0 = self.__init_u0(image)
-        u = self.__uupdate_MBO(u0, image)
-       # plt.ioff()  # Turn matplotlib interactive mode off
-        print('Finished Segmentation')
 
-        #plt.savefig(f'/Applications/Programming/SURF/Results/final_seg')
+        dice_score = dice(u0, image.ground_truth)
+        self.dice_score.append(dice_score)
+        self.__render(u0, image)
+        self.__render(u0, image)
+
+        u = self.__uupdate_MBO(u0, image, plotting)
+        print('Finished Segmentation')
 
         return u
 
-    def __uupdate_MBO(self, u, image:Image):
+    def __uupdate_MBO(self, u, image:Image, plotting):
         """
         Implements the modified MBO scheme 
         """
@@ -154,7 +161,12 @@ class Segmenter(Bhatt_Calculator):
         sigma, phi = np.linalg.eig(eye_minus_adt_Lap_inv)
         sigma = sigma.reshape(-1,1)
 
-        self.__render(u, image, 0)
+        dice_score = dice(u, image.ground_truth)
+        self.dice_score.append(dice_score)
+
+        #if plotting:
+          #  self.__render(u, image)
+
         # Run iterations
         for i in range(0,self.maxiterations):
             print('iteration: '+ str(i))
@@ -177,12 +189,17 @@ class Segmenter(Bhatt_Calculator):
             # Thresholding
             u = np.heaviside(v2 - 0.5, 0)
 
+            #Calculate dice score
+            dice_score = dice(u, image.ground_truth)
+            self.dice_score.append(dice_score)
+
             # Render the segmentation
-            self.__render(u, image, i)
+            if plotting:    
+                self.__render(u, image)
 
             # Stopping condition
             dist = np.sum(np.abs(u - u_old))
-            if dist < self.delta:
+            if dist <= self.delta:
                 break
 
         return u
@@ -301,19 +318,36 @@ class Segmenter(Bhatt_Calculator):
         v[:,1:] = v[:,:-1]
         return v
 
-    def __render(self, u, image, iteration):
+    def __render(self, u, image):
         """
         Live rendering of the segmentation.
         """ 
-        segmentation = u*image.image
-        #segmentation = u
-        plt.imshow(segmentation)
+        M, N = u.shape
+        mask = np.ones_like(u) - u      # Create mask for plotting transparent region
+        opaque_layer = np.zeros([M, N, 4])
+        opaque_layer[:,:,0:3] = 0
+        opaque_layer[:,:,3] = mask
+
+        self.axs[0,1].imshow(image.image)
+        self.axs[0,1].imshow(opaque_layer, alpha = 0.5)
+        self.axs[0,1].set_title('Segmentation')
+
+        self.axs[0,0].imshow(image.image)
+        self.axs[0,0].set_title('Reconstruction')
+
+        self.axs[1,0].plot(self.dice_score,'b')
+        self.axs[1,0].set_title('Dice Score')
+
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+        self.fig.tight_layout()
+
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('heart')
+    gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
+    im = Image('heart', ground_truth = gt)
     recon_params = Reconstruction_Params(momentum_im = 1,
                                          sigma = 1e-2,
                                          batch_size = 700,

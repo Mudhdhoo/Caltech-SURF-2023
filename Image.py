@@ -2,10 +2,12 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import loadmat
-import PIL
 
 class Image:
-    def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1, build_y = True) -> None:
+    """
+    Class for representing and manipulating the image.
+    """
+    def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1, build_y = True, ground_truth = None) -> None:
         # Image set-up
         if type(image) == str:
             image = loadmat(os.path.join('images',image))[image]
@@ -20,8 +22,10 @@ class Image:
         self.is_binary = is_binary
         if build_y:
             self.image = self.build_y()
-        self.J = self.make_feature_map()
+        #self.J = self.make_feature_map()
+        self.make_feature_map()
         self.y = self.image
+        self.ground_truth = ground_truth
 
         # Feature map parameters
         self.KER = KER
@@ -60,7 +64,7 @@ class Image:
         N = self.image.shape[1]
         self.J = self.image.reshape(M*N, 1)
 
-       # return J
+        #return 
 
     def update_image(self, new_image):
         """
@@ -77,8 +81,9 @@ class Image:
         plt.show()
 
 if __name__ == '__main__':
-    im = Image('heart')
-    plt.imshow(im.image)
+    gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
+    im = Image('heart', ground_truth = gt)
+    plt.imshow(gt)
     plt.show()
     #im.show()
     
