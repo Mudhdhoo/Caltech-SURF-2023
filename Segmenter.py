@@ -105,7 +105,8 @@ class Segmenter(Bhatt_Calculator):
 
         # Plotting
         self.dice_score = []
-        self.fig, self.axs = plt.subplots(2,2)
+      #  self.fig, self.axs = plt.subplots(2,2)
+        self.fig = plt.figure()
         plt.ion()       # Turn matplotlib interactive mode on
 
     def init_u0(self, image:Image):
@@ -114,7 +115,7 @@ class Segmenter(Bhatt_Calculator):
         """
         M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
         circle_center = np.array([M1/2.5, N1/2])  
-        circle_radius = N1/4 # Hardcoded atm, can change to be dynamic later
+        circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
@@ -136,8 +137,8 @@ class Segmenter(Bhatt_Calculator):
 
         dice_score = dice(u0, image.ground_truth)
         self.dice_score.append(dice_score)
-        self.__render(u0, image)
-        self.__render(u0, image)
+        self.__render(u0, image,1)
+        self.__render(u0, image,0)
 
         u = self.__uupdate_MBO(u0, image, plotting)
         print('Finished Segmentation')
@@ -163,9 +164,6 @@ class Segmenter(Bhatt_Calculator):
 
         dice_score = dice(u, image.ground_truth)
         self.dice_score.append(dice_score)
-
-        #if plotting:
-          #  self.__render(u, image)
 
         # Run iterations
         for i in range(0,self.maxiterations):
@@ -195,7 +193,7 @@ class Segmenter(Bhatt_Calculator):
 
             # Render the segmentation
             if plotting:    
-                self.__render(u, image)
+                self.__render(u, image, i)
 
             # Stopping condition
             dist = np.sum(np.abs(u - u_old))
@@ -318,7 +316,7 @@ class Segmenter(Bhatt_Calculator):
         v[:,1:] = v[:,:-1]
         return v
 
-    def __render(self, u, image):
+    def __render(self, u, image, iteration):
         """
         Live rendering of the segmentation.
         """ 
@@ -328,22 +326,32 @@ class Segmenter(Bhatt_Calculator):
         opaque_layer[:,:,0:3] = 0
         opaque_layer[:,:,3] = mask
 
-        self.axs[0,1].imshow(image.image)
-        self.axs[0,1].imshow(opaque_layer, alpha = 0.5)
-        self.axs[0,1].set_title('Segmentation')
+        # self.axs[0,1].imshow(image.image)
+        # self.axs[0,1].imshow(opaque_layer, alpha = 0.5)
+        # self.axs[0,1].set_title('Segmentation')
+    
+        # self.axs[0,0].imshow(image.image)
+        # self.axs[0,0].set_title('Reconstruction')
 
-        self.axs[0,0].imshow(image.image)
-        self.axs[0,0].set_title('Reconstruction')
+        # self.axs[1,0].plot(self.dice_score,'b')
+        # self.axs[1,0].set_title('Dice Score')
 
-        self.axs[1,0].plot(self.dice_score,'b')
-        self.axs[1,0].set_title('Dice Score')
+       # self.fig.canvas.draw()
+       # self.fig.canvas.flush_events()
 
+       # self.fig.tight_layout()
+
+       # plt.show()
+
+
+        plt.imshow(image.image)
+        plt.imshow(opaque_layer, alpha = 0.5)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
-
-        self.fig.tight_layout()
-
         plt.show()
+        if (iteration+1) % 5 == 0 or iteration == 0:
+            plt.savefig(f'/Users/johncao/Documents/Caltech_SURF_2023/Poster/Poster_images/test_{iteration+1}', bbox_inches='tight')
+
 
 if __name__ == '__main__':
     gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
