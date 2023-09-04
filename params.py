@@ -37,6 +37,24 @@ brain_params_seg = Segmentation_Params(delta = 8,
                                     dirac = 0,
                                     verbose = True)
 
+cow_params_seg = Segmentation_Params(delta = 2,
+                                    GL_epsilon = 1e0,
+                                    steps = 10,
+                                    margin_proportion = 0.05,
+                                    maxiterations = 25,
+                                    grad_Bhatt_MC = 1,
+                                    Bhatt_MC = 2,#4
+                                    sigma = 1e-2,
+                                    beta = 2*1e2,
+                                    gamma = 2*2*1e-2,#2*2*1e-2,
+                                    momentum_u = 0,
+                                    threshold_seg = 0.01,
+                                    max_sparsity_seg = 24159191,
+                                    batch_size = 700,
+                                    method = 'quadrature',
+                                    dirac = 0,
+                                    verbose = True)    
+
 triangle_params_seg = Segmentation_Params(delta = 2,
                                     GL_epsilon = 1e0,
                                     steps = 100,

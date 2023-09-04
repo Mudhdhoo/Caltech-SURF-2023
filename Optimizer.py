@@ -71,8 +71,9 @@ if __name__ == '__main__':
     image = Image('heart')
     optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True, plotting = True)
     u, im = optimizer.run()
-    plt.imshow(u)
+    plt.imshow(im)
     plt.show()
+
 
         
         

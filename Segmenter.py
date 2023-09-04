@@ -9,6 +9,7 @@ from Reconstructor import Reconstructor
 from Parameters import *
 from params import *
 from utils import dice
+plt.rcParams["font.family"] = "Times New Roman"
 
 class Segmenter(Bhatt_Calculator):
     """
@@ -105,8 +106,9 @@ class Segmenter(Bhatt_Calculator):
 
         # Plotting
         self.dice_score = []
-      #  self.fig, self.axs = plt.subplots(2,2)
+       # self.fig, self.axs = plt.subplots(2,2)
         self.fig = plt.figure()
+        self.iteration = 0
         plt.ion()       # Turn matplotlib interactive mode on
 
     def init_u0(self, image:Image):
@@ -128,21 +130,27 @@ class Segmenter(Bhatt_Calculator):
         """
         Segments the given image using the modified MBO scheme.
         """
-        # Triangle 
-       # u0 = loadmat('u0')['u0'] #########
-
-        # Rectangle
-        #u0 = np.zeros([7,7]) 
-        #u0 = self.__init_u0(image)
 
         dice_score = dice(u0, image.ground_truth)
         self.dice_score.append(dice_score)
-        self.__render(u0, image,1)
-        self.__render(u0, image,0)
+        if plotting:
+            self.__render(u0, image,1)
+            self.__render(u0, image,0)
 
         u = self.__uupdate_MBO(u0, image, plotting)
         print('Finished Segmentation')
+    
 
+        #fig = plt.figure(figsize = (5,3))
+       # plt.imshow(u)
+      #  plt.title('Final Reconstruction', fontweight = 'bold', fontsize = 20)
+       # plt.axis('off')
+       #plt.savefig(f'/Users/johncao/Documents/Caltech_SURF_2023/Poster/Poster_images/recon.eps', bbox_inches='tight')
+      #  plt.xlabel('Iteration', fontsize = 15)
+       # plt.ylabel('Dice Score', fontsize = 15)
+       # plt.grid()
+       # plt.show()
+        
         return u
 
     def __uupdate_MBO(self, u, image:Image, plotting):
@@ -320,11 +328,11 @@ class Segmenter(Bhatt_Calculator):
         """
         Live rendering of the segmentation.
         """ 
-        M, N = u.shape
-        mask = np.ones_like(u) - u      # Create mask for plotting transparent region
-        opaque_layer = np.zeros([M, N, 4])
-        opaque_layer[:,:,0:3] = 0
-        opaque_layer[:,:,3] = mask
+        # M, N = u.shape
+        # mask = np.ones_like(u) - u      # Create mask for plotting transparent region
+        # opaque_layer = np.zeros([M, N, 4])
+        # opaque_layer[:,:,0:3] = 0
+        # opaque_layer[:,:,3] = mask
 
         # self.axs[0,1].imshow(image.image)
         # self.axs[0,1].imshow(opaque_layer, alpha = 0.5)
@@ -336,44 +344,40 @@ class Segmenter(Bhatt_Calculator):
         # self.axs[1,0].plot(self.dice_score,'b')
         # self.axs[1,0].set_title('Dice Score')
 
-       # self.fig.canvas.draw()
-       # self.fig.canvas.flush_events()
+        # self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
 
-       # self.fig.tight_layout()
-
-       # plt.show()
-
+        # self.fig.tight_layout()
+        # plt.show()
 
         plt.imshow(image.image)
-        plt.imshow(opaque_layer, alpha = 0.5)
+     #   plt.imshow(opaque_layer, alpha = 0.75)
+        plt.axis('off')
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.show()
-        if (iteration+1) % 5 == 0 or iteration == 0:
-            plt.savefig(f'/Users/johncao/Documents/Caltech_SURF_2023/Poster/Poster_images/test_{iteration+1}', bbox_inches='tight')
-
 
 if __name__ == '__main__':
     gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
-    im = Image('heart', ground_truth = gt)
-    recon_params = Reconstruction_Params(momentum_im = 1,
-                                         sigma = 1e-2,
-                                         batch_size = 700,
-                                         alpha = 1,
-                                         beta = 2*1e2,
-                                         gfn_MC = 3,
-                                         threshold_gfn = 3.5905,
-                                         max_sparsity_gfn = 1000000,
-                                         reg_a = 2e-1,
-                                         reg_epsilon = 0.01,
-                                         method = 'quadrature',
-                                         verbose = True
-                                         )
+    im = Image('image', ground_truth = None, scale = 0.4)
+    # recon_params = Reconstruction_Params(momentum_im = 1,
+    #                                      sigma = 1e-2,
+    #                                      batch_size = 700,
+    #                                      alpha = 1,
+    #                                      beta = 2*1e2,
+    #                                      gfn_MC = 3,
+    #                                      threshold_gfn = 3.5905,
+    #                                      max_sparsity_gfn = 1000000,
+    #                                      reg_a = 2e-1,
+    #                                      reg_epsilon = 0.01,
+    #                                      method = 'quadrature',
+    #                                      verbose = True
+    #                                      )
 
-    recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
-    denoised_im = recon.cheap_reconstruction(im.image)
-    im.update_image(denoised_im)
-    seg = Segmenter(heart_params_seg)
+    # recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
+    # denoised_im = recon.cheap_reconstruction(im.image)
+    # im.update_image(denoised_im)
+    seg = Segmenter(cow_params_seg)
     u0 = seg.init_u0(im)
     u = seg.segment(u0, im)
 

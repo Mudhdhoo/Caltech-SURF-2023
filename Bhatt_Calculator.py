@@ -100,6 +100,7 @@ class Bhatt_Calculator:
             threshold_val = self.sigma * np.sqrt(2 * np.log(C/self.threshold))
         else:
             threshold_val = 2 * self.sigma**2 * np.log(C/self.threshold)
+            print(threshold_val)
 
         inv2sigma2 = -0.5 * self.sigma**(-2)
         sum0 = np.sum(1-u_vec)     # Denominator P2
