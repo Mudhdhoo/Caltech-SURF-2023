@@ -37,13 +37,13 @@ brain_params_seg = Segmentation_Params(delta = 8,
                                     dirac = 0,
                                     verbose = True)
 
-cow_params_seg = Segmentation_Params(delta = 2,
+cow_params_seg = Segmentation_Params(delta = 8,
                                     GL_epsilon = 1e0,
                                     steps = 10,
-                                    margin_proportion = 0.05,
-                                    maxiterations = 25,
-                                    grad_Bhatt_MC = 1,
-                                    Bhatt_MC = 2,#4
+                                    margin_proportion = 0.0225,
+                                    maxiterations = 50,
+                                    grad_Bhatt_MC = 10,
+                                    Bhatt_MC = 10,#4
                                     sigma = 1e-2,
                                     beta = 2*1e2,
                                     gamma = 2*2*1e-2,#2*2*1e-2,
@@ -51,9 +51,27 @@ cow_params_seg = Segmentation_Params(delta = 2,
                                     threshold_seg = 0.01,
                                     max_sparsity_seg = 24159191,
                                     batch_size = 700,
-                                    method = 'quadrature',
+                                    method = 'random',
                                     dirac = 0,
                                     verbose = True)    
+
+color_rect_params_seg = Segmentation_Params(delta = 2,
+                                    GL_epsilon = 0.65,
+                                    steps = 10,
+                                    margin_proportion = 0.0225,
+                                    maxiterations = 50,
+                                    grad_Bhatt_MC = 10,
+                                    Bhatt_MC = 10,#4
+                                    sigma = 1e-2,
+                                    beta = 2*1e2,
+                                    gamma = 2*2*1e-2,#2*2*1e-2,
+                                    momentum_u = 0,
+                                    threshold_seg = 0.01,
+                                    max_sparsity_seg = 10,
+                                    batch_size = 700,
+                                    method = 'random',
+                                    dirac = 0,
+                                    verbose = True) 
 
 triangle_params_seg = Segmentation_Params(delta = 2,
                                     GL_epsilon = 1e0,

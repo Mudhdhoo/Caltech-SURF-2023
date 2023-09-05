@@ -67,7 +67,7 @@ class Segmentation_Params:
     maxiterations: int
     grad_Bhatt_MC: int
     Bhatt_MC: int
-    sigma: float
+    sigma: float                              
     beta: float
     gamma: float
     momentum_u: float

@@ -83,7 +83,14 @@ def dice(u, ground_truth):
     return dice
 
 if __name__ == '__main__':
-    u = np.array([[0,0,0],[1,1,0],[0,1,1],[0,0,0]])
-    gt = np.array([[0,0,0],[1,1,0],[1,1,0],[0,0,0]])
-    print(dice(u,gt))
-    print(6)
+    def Z0_calculator(MC_iterations, q):
+        level_max = MC_iterations
+        point_num = sparse_grid_herm_size(q, level_max)
+        Z0, W0 = np.polynomial.hermite.hermgauss(point_num)
+        Z0 = Z0.reshape(-1,1)
+        W0 = W0.reshape(1,-1)
+        return Z0, W0
+    
+    Z0, W0 = Z0_calculator(1,3)
+    print(Z0)
+

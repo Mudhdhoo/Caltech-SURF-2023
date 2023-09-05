@@ -1,7 +1,10 @@
+from json import load
+from random import random
 import numpy as np
 import scipy.sparse as sp
 from numpy.matlib import repmat
 from utils import *
+from scipy.io import loadmat
 
 # Make this class private? Add verbose function?
 class Bhatt_Calculator:
@@ -47,7 +50,20 @@ class Bhatt_Calculator:
         n, q = J.shape
         u_vec = u.reshape(n,1)
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
-        indices = np.random.randint(0,int(n), Z0.shape)     # Pick random indicies for Monte-Carlo sampling
+
+        #########################
+        #Z0 = loadmat('Z0_rand.mat')['Z0']
+        #########################
+
+        if q > 1:
+            indices = np.random.randint(0,int(n), [Z0.shape[0],1])     # Pick random indicies for Monte-Carlo sampling
+        else:
+            indices = np.random.randint(0,int(n), Z0.shape)
+
+        #########################
+       # indices = loadmat('indices_rand.mat')['indices']-1
+        #########################
+
         val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
 
         if self.verbose:
@@ -100,7 +116,6 @@ class Bhatt_Calculator:
             threshold_val = self.sigma * np.sqrt(2 * np.log(C/self.threshold))
         else:
             threshold_val = 2 * self.sigma**2 * np.log(C/self.threshold)
-            print(threshold_val)
 
         inv2sigma2 = -0.5 * self.sigma**(-2)
         sum0 = np.sum(1-u_vec)     # Denominator P2
@@ -118,6 +133,12 @@ class Bhatt_Calculator:
         else:
             J_1nq = J.T    
         perm = np.random.permutation(nindex)
+
+        ###########################
+       # perm = loadmat('perm_rand.mat')['perm']-1
+       # perm = np.squeeze(perm,0)
+        ###########################
+
         for b in range(1,num_batches+1):
             # Get batch indices
             I_start = (b-1) * self.batch_size 
@@ -126,19 +147,25 @@ class Bhatt_Calculator:
 
             # Compute norm squared for the batch
             if q == 1:
+                # Greyscale image
                 perm_batch_indices = perm[I_start:I_end+1]
                 randomize_ind = indices[perm_batch_indices].reshape(-1,)
                 J_I_minus_J = J[randomize_ind] - J_1nq #this_batch_size x n
                 KER_above_threshold1 = J_I_minus_J < threshold_val
                 KER_above_threshold2 = J_I_minus_J > - threshold_val
                 KER_above_threshold = np.logical_and(KER_above_threshold1,KER_above_threshold2)
-            #else?
+            else: 
+                # RGB image
+                perm_batch_indices = perm[I_start:I_end+1]
+                randomize_ind = indices[perm_batch_indices].reshape(-1,)
+                J_I_minus_J = J[randomize_ind,:].reshape([this_batch_size, 1, q]) - J_1nq
+                J_I_minus_J = np.sum(J_I_minus_J**2, 2)
+                KER_above_threshold = J_I_minus_J < threshold_val
 
             rows, cols = np.nonzero(KER_above_threshold)
-
             rows = np.expand_dims(rows[0:self.max_sparsity-count],1)
             cols = np.expand_dims(cols[0:self.max_sparsity-count],1)
-
+           # print(cols)
             # Convert to global indices
             rows = rows + I_start - 0 ########### -1?
             l = len(rows)
@@ -152,11 +179,12 @@ class Bhatt_Calculator:
                 if self.verbose:
                     print(f'Max sparsity reached at batch {b} of {num_batches}')
                 break
-
         # Truncate if below max sparsity
+       
         sparsity = min(count,self.max_sparsity)
         ivec = np.int64(ivec[0:sparsity])
         jvec = np.int64(jvec[0:sparsity])
+        
         J_i = np.squeeze(J[indices[ivec],:],1)
         J_i = np.squeeze(J_i,1)
         J_j = np.squeeze(J[jvec,:],1)
@@ -165,9 +193,10 @@ class Bhatt_Calculator:
         # Computing P1, P2
         S = sp.coo_matrix((np.ones(len(ivec)),(np.squeeze(ivec,1), np.arange(0,sparsity))), shape=[nindex, sparsity])   # nindex x sparsity
         if q > 1:
-            pass # Add later
+            Amat = np.exp(logC + inv2sigma2 * np.sum(J_minus_J.reshape([sparsity, 1, q]) + self.sigma * Z0.reshape([1, MC, q]),2)**2)
         else:
             Amat = np.exp(logC + inv2sigma2 * (J_minus_J + self.sigma * Z0.T)**2)
+
         A_ij_u_j_mat = Amat * np.squeeze(u_vec[jvec],1) #sparsity x MC
         S_A_ij_u_j_mat = S @ A_ij_u_j_mat #nindex x MC
         P1 = ((S@Amat) - S_A_ij_u_j_mat)/sum0 #nindex x MC

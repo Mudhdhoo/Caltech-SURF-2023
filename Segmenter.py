@@ -140,7 +140,6 @@ class Segmenter(Bhatt_Calculator):
         u = self.__uupdate_MBO(u0, image, plotting)
         print('Finished Segmentation')
     
-
         #fig = plt.figure(figsize = (5,3))
        # plt.imshow(u)
       #  plt.title('Final Reconstruction', fontweight = 'bold', fontsize = 20)
@@ -350,7 +349,13 @@ class Segmenter(Bhatt_Calculator):
         # self.fig.tight_layout()
         # plt.show()
 
-        plt.imshow(image.image)
+       # plt.imshow(image.image)
+        # rgb_u = np.zeros(image.image_size)
+        # rgb_u[:,:,0] = u
+        # rgb_u[:,:,1] = u
+        # rgb_u[:,:,2] = u
+       # plt.imshow(image.image[:,:,:]*rgb_u)
+        plt.imshow(image.image*u)
      #   plt.imshow(opaque_layer, alpha = 0.75)
         plt.axis('off')
         self.fig.canvas.draw()
@@ -358,31 +363,16 @@ class Segmenter(Bhatt_Calculator):
         plt.show()
 
 if __name__ == '__main__':
-    gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
-    im = Image('image', ground_truth = None, scale = 0.4)
-    # recon_params = Reconstruction_Params(momentum_im = 1,
-    #                                      sigma = 1e-2,
-    #                                      batch_size = 700,
-    #                                      alpha = 1,
-    #                                      beta = 2*1e2,
-    #                                      gfn_MC = 3,
-    #                                      threshold_gfn = 3.5905,
-    #                                      max_sparsity_gfn = 1000000,
-    #                                      reg_a = 2e-1,
-    #                                      reg_epsilon = 0.01,
-    #                                      method = 'quadrature',
-    #                                      verbose = True
-    #                                      )
+    #im = loadmat(os.path.join('images','color_rect'))['color_rect']
+    #u0 = loadmat(os.path.join('images','color_rect_u0'))['u0']
 
-    # recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
-    # denoised_im = recon.cheap_reconstruction(im.image)
-    # im.update_image(denoised_im)
-    seg = Segmenter(cow_params_seg)
-    u0 = seg.init_u0(im)
+    # seg = Segmenter(cow_params_seg)    
+    # im = loadmat(os.path.join('images','cow'))['cow']
+    # im = Image(im, build_y = False, scale = 1)
+    # u0 = seg.init_u0(im)                                                                   
+    # u = seg.segment(u0, im)
+
+    im = Image('heart', build_y = False)
+    seg = Segmenter(heart_params_seg)   
+    u0 = seg.init_u0(im)                                                                             
     u = seg.segment(u0, im)
-
-    #ground_truth = loadmat(os.path.join('images','heart_truth.mat'))['groundtruth']
-   # wrong_pixels = np.abs(np.sum(ground_truth-u))
-   # print(im.image)
-    plt.imshow(u)
-    plt.show()

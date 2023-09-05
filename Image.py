@@ -12,9 +12,10 @@ class Image:
         # Image set-up
         if type(image) == str:
             image = loadmat(os.path.join('images',image))[image]
-        image = self.resize_image(image, scale)
-
-        self.image = image / np.max(image)       # Normalize image to [0,1]
+            self.image = image / np.max(image)       # Normalize image to [0,1]
+        else:
+            self.image = image
+            
         self.image_size = self.image.shape
         self.color = False
         if len(self.image_size) > 2:
@@ -104,8 +105,11 @@ class Image:
 
 if __name__ == '__main__':
     gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
-    im = Image('image', ground_truth = None, build_y = False, scale=0.5)
-    plt.imshow(im.image)
+    im = loadmat('u0.mat')['u0']
+    im = (im*255).astype('uint8')
+    print(im.dtype)
+    #im = Image(im, ground_truth = None, build_y = False, scale=1)
+    plt.imshow(im)
     plt.show()
     #im.show()
     
