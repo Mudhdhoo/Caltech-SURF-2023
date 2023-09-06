@@ -85,8 +85,12 @@ class Reconstructor(Bhatt_Calculator):
         """
         Cheap initial reconstruction of the image. 
         """
+        is_rgb = True
+        if len(y.shape) == 2:
+            is_rgb = False
+
         if self.algorithm == 'TV':
-            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight)
+            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight, multichannel = is_rgb)
 
         if self.algorithm == 'TGV':
             pass
@@ -178,7 +182,7 @@ class Reconstructor(Bhatt_Calculator):
     def Imupdate_linear(self, im_old, tilde_im):
         M, N = im_old.shape[0], im_old.shape[1]
         l = len(im_old.shape)
-        if l == 1:
+        if l == 2:
             D1, D2 = self.grad_forward(im_old)        
         else:
             D1, D2 = self.grad_forward(im_old[:,:,0])    
@@ -269,13 +273,12 @@ class Reconstructor(Bhatt_Calculator):
 
     def KS(self, v, D1, D2, M, N, l):
         if l > 2:
-            return np.concatenate((self.div_channel(v[:,:,0:2], D1, D2, M, N), self.div_channel(v[:,:,2:4], D1, D2, M, N), self.div_channel(v[:,:,4:6], D1, D2, M, N)))
+            return np.stack((self.div_channel(v[:,:,0:2], D1, D2, M, N), self.div_channel(v[:,:,2:4], D1, D2, M, N), self.div_channel(v[:,:,4:6], D1, D2, M, N)),2)
 
         return self.div_channel(v[:,:,0:2], D1, D2, M, N)
 
     def proxFS(self, y, sigma0):
-        ######## Change the last parameter to np.stack to be dynamic not hardcoded
-        return (y / (1 + sigma0*self.reg_epsilon)) / np.stack((np.maximum(1, self.norms(y / (1 + sigma0*self.reg_epsilon), 2, 2) / self.reg_a), np.maximum(1, self.norms(y / (1 + sigma0*self.reg_epsilon), 2, 2) / self.reg_a)), 2)
+        return (y / (1 + sigma0*self.reg_epsilon)) / np.stack([np.maximum(1, self.norms(y / (1 + sigma0*self.reg_epsilon), 2, 2) / self.reg_a)]*y.shape[2], 2)
 
     def proxG(self, q, tau, tildeIm):
         return self.Ainv(2*self.alpha*self.Tadj(self.y) + 2*self.momentum_Im*tildeIm + q/tau, tau)
@@ -305,11 +308,12 @@ if __name__ == '__main__':
     im = Image('cow')
     recon = Reconstructor(cow_params_recon, 'TV', TV_weight = 1)
     u = loadmat('u.mat')['u']
-    rec_im = loadmat('cow_im0.mat')['Im0']
+    rec_im = recon.cheap_reconstruction(im.image)
     im.update_image(rec_im) # Update the image
 
     new_im = recon.reconstruct(im, u)
-    fig, axs = plt.subplots(1,2)
-    axs[1].imshow(new_im)
-    axs[0].imshow(im.image)
+   # fig, axs = plt.subplots(1,2)
+    #axs[1].imshow(new_im)
+    #axs[0].imshow(im.image)
+    plt.imshow(new_im)
     plt.show()

@@ -86,3 +86,6 @@ Start poster
 
 Issue with sparse_grid_herm_size() seems to be when q > 1, otherwise works fine.
 
+------------------------------------------------------------------------------------------
+5 Sep
+Function KS doesnt work for RGB images, fix

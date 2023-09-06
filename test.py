@@ -9,8 +9,8 @@ plt.rcParams["font.family"] = "Times New Roman"
 
 if __name__ == '__main__':
     gt = loadmat(os.path.join('images','heart_truth'))['groundtruth']
-    image = Image('image', ground_truth = None, scale = 0.4)
-    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 2, verbose = True, plotting = True)
+    image = Image('cow', ground_truth = None, scale = 1, noise_std = 0.1)
+    optimizer = Joint_Optimizer(cow_params_seg, cow_params_recon, image, iterations = 6, verbose = True, plotting = True)
     
     start = timer()
     u, im = optimizer.run()

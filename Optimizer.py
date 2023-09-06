@@ -29,7 +29,7 @@ class Joint_Optimizer:
 
     def __init__(self, seg_params:Segmentation_Params, recon_params:Reconstruction_Params, image:Image, iterations:int, verbose = False, plotting = True) -> None:
         self.segmenter = Segmenter(seg_params)
-        self.reconstructor = Reconstructor(recon_params, 'TV')
+        self.reconstructor = Reconstructor(recon_params, 'TV', TV_weight = 1)
         self.image = image
         self.iterations = iterations
         self.verbose = verbose
