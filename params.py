@@ -53,7 +53,21 @@ cow_params_seg = Segmentation_Params(delta = 8,
                                     batch_size = 700,
                                     method = 'random',
                                     dirac = 0,
-                                    verbose = True)    
+                                    verbose = True)
+
+cow_params_recon = Reconstruction_Params(momentum_im = 1,
+                                    sigma = 1e-2,
+                                    batch_size = 700,
+                                    alpha = 1,
+                                    beta = 2*1e2,
+                                    gfn_MC = 100,
+                                    threshold_gfn = 0.1,
+                                    max_sparsity_gfn = 500000,
+                                    reg_a = 2e-1,
+                                    reg_epsilon = 0.01,
+                                    method = 'random',
+                                    verbose = True
+                                    )    
 
 color_rect_params_seg = Segmentation_Params(delta = 2,
                                     GL_epsilon = 0.65,

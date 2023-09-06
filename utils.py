@@ -66,6 +66,16 @@ def sparse_grid_herm_size(dim_num, level_max):
 
     return int(point_num)
 
+def sparse_grid_herm(dim_num, level_max, point_num):
+    grid_point = np.zeros([dim_num, point_num])
+    grid_weight = np.zeros([1, point_num])
+
+    point_num2 = 0
+    level_min = max(0, level_max + 1 - dim_num)
+
+    for level in range(level_min, level_max+1):
+        pass
+
 def dice(u, ground_truth):
     """
     Computes the Sorensen-Dice coefficient of a segmentation relative to a known ground

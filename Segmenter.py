@@ -116,8 +116,8 @@ class Segmenter(Bhatt_Calculator):
         Creates the initial segmentation of the image.
         """
         M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
-        circle_center = np.array([M1/2.5, N1/2])  
-        circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
+        circle_center = np.array([M1/2, N1/3.5])  
+        circle_radius = N1/4.5 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
@@ -350,12 +350,12 @@ class Segmenter(Bhatt_Calculator):
         # plt.show()
 
        # plt.imshow(image.image)
-        # rgb_u = np.zeros(image.image_size)
-        # rgb_u[:,:,0] = u
-        # rgb_u[:,:,1] = u
-        # rgb_u[:,:,2] = u
-       # plt.imshow(image.image[:,:,:]*rgb_u)
-        plt.imshow(image.image*u)
+        rgb_u = np.zeros(image.image_size)
+        rgb_u[:,:,0] = u
+        rgb_u[:,:,1] = u
+        rgb_u[:,:,2] = u
+        plt.imshow(image.image[:,:,:]*rgb_u)
+       # plt.imshow(image.image*u)
      #   plt.imshow(opaque_layer, alpha = 0.75)
         plt.axis('off')
         self.fig.canvas.draw()
@@ -366,13 +366,13 @@ if __name__ == '__main__':
     #im = loadmat(os.path.join('images','color_rect'))['color_rect']
     #u0 = loadmat(os.path.join('images','color_rect_u0'))['u0']
 
-    # seg = Segmenter(cow_params_seg)    
-    # im = loadmat(os.path.join('images','cow'))['cow']
-    # im = Image(im, build_y = False, scale = 1)
-    # u0 = seg.init_u0(im)                                                                   
-    # u = seg.segment(u0, im)
-
-    im = Image('heart', build_y = False)
-    seg = Segmenter(heart_params_seg)   
-    u0 = seg.init_u0(im)                                                                             
+    seg = Segmenter(cow_params_seg)    
+    im = loadmat(os.path.join('images','cow'))['cow']
+    im = Image(im, build_y = False, scale = 1)
+    u0 = seg.init_u0(im)                                                                   
     u = seg.segment(u0, im)
+
+    # im = Image('heart', build_y = False)
+    # seg = Segmenter(heart_params_seg)   
+    # u0 = seg.init_u0(im)                                                                             
+    # u = seg.segment(u0, im)

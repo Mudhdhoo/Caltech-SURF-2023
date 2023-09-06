@@ -7,6 +7,7 @@ from Image import Image
 from Parameters import Reconstruction_Params
 from scipy.io import loadmat
 from scipy.sparse import diags, eye, kron
+from params import *
 
 class Reconstructor(Bhatt_Calculator):
     """
@@ -75,6 +76,7 @@ class Reconstructor(Bhatt_Calculator):
         # Compute linearization
         g = self.gfn(image, u)
         tildeIm = im - 0.5*self.beta/self.momentum_Im * g
+
         im = self.Imupdate_linear(im, tildeIm)
 
         return im
@@ -98,14 +100,15 @@ class Reconstructor(Bhatt_Calculator):
         return denoised_im
         
     def gfn(self, image:Image, u):
-        M, N = image.image_size
+
+        M, N = image.image_size[0], image.image_size[1]
         J = image.J
         n, q = J.shape
         u_vec = u.reshape(-1,1)
         Z0, W0 = self.Z0_calculator(self.gfn_MC, q)
         fZ0 = self.B_grad_J_integrand(J, u_vec, Z0)
         gradJ = np.sum(fZ0 * W0.reshape([1, 1, len(W0[0])]), axis = 2)
-        g = gradJ.reshape([256, 256])
+        g = gradJ.reshape(image.image_size)
 
         return g
 
@@ -134,8 +137,29 @@ class Reconstructor(Bhatt_Calculator):
         sum1 = n - sum0
         
         # Evaluate fout at each index
-        fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum0), 1,1]))
-        fout_u1 = 0.5 * self.sigma**(-2) * (1/sum1) * np.sqrt(P1_Z[u_index_1,:] / (P2_Z[u_index_1,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum1), 1,1]))
+        if q == 1:
+            # Greyscale
+            fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum0), 1,1]))
+            fout_u1 = 0.5 * self.sigma**(-2) * (1/sum1) * np.sqrt(P1_Z[u_index_1,:] / (P2_Z[u_index_1,:]+1e-8)) * np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum1), 1,1]))
+        else:
+            # RGB
+            z_minus_J_0 = np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum0), 1,1]))
+            z_minus_J_1 = np.squeeze(np.tile(np.reshape(self.sigma*Z0,[1, MC, q]), [int(sum1), 1,1]))
+            sqrt_P2_div_P1 = np.sqrt(P2_Z[u_index_0,:] / (P1_Z[u_index_0,:]+1e-8))
+            sqrt_P1_div_P2 = np.sqrt(P1_Z[u_index_1,:] / (P2_Z[u_index_1,:]+1e-8))
+
+            sqrt_P2_div_P1_mult_z_minus_J = z_minus_J_0
+            sqrt_P2_div_P1_mult_z_minus_J[:,:,0] = sqrt_P2_div_P1_mult_z_minus_J[:,:,0] * sqrt_P2_div_P1
+            sqrt_P2_div_P1_mult_z_minus_J[:,:,1] = sqrt_P2_div_P1_mult_z_minus_J[:,:,1] * sqrt_P2_div_P1
+            sqrt_P2_div_P1_mult_z_minus_J[:,:,2] = sqrt_P2_div_P1_mult_z_minus_J[:,:,2] * sqrt_P2_div_P1
+
+            sqrt_P1_div_P2_mult_z_minus_J = z_minus_J_1
+            sqrt_P1_div_P2_mult_z_minus_J[:,:,0] = sqrt_P1_div_P2_mult_z_minus_J[:,:,0] * sqrt_P1_div_P2
+            sqrt_P1_div_P2_mult_z_minus_J[:,:,1] = sqrt_P1_div_P2_mult_z_minus_J[:,:,1] * sqrt_P1_div_P2
+            sqrt_P1_div_P2_mult_z_minus_J[:,:,2] = sqrt_P1_div_P2_mult_z_minus_J[:,:,2] * sqrt_P1_div_P2
+
+            fout_u0 = 0.5 * self.sigma**(-2) * (1/sum0) * sqrt_P2_div_P1_mult_z_minus_J
+            fout_u1 = 0.5 * self.sigma**(-2) * (1/sum1) * sqrt_P1_div_P2_mult_z_minus_J 
 
         #Combine elements of fout
         if q == 1:
@@ -152,10 +176,13 @@ class Reconstructor(Bhatt_Calculator):
         return fout
 
     def Imupdate_linear(self, im_old, tilde_im):
-        M, N = im_old.shape
-        D1, D2 = self.grad_forward(im_old)        
+        M, N = im_old.shape[0], im_old.shape[1]
         l = len(im_old.shape)
-
+        if l == 1:
+            D1, D2 = self.grad_forward(im_old)        
+        else:
+            D1, D2 = self.grad_forward(im_old[:,:,0])    
+        
         im_new = self.primal_dual(im_old, 4*self.momentum_Im, tilde_im, D1, D2, M, N, l)
 
         return im_new
@@ -167,6 +194,9 @@ class Reconstructor(Bhatt_Calculator):
         one = np.ones([M])
         one[-1] = 0         # Boundary conditions
         D1 = diags([-one, one], [0, 1], shape = [M,M])
+
+        one = np.ones([N])
+        one[-1] = 0  
         D2 = diags([-one, one], [0, 1], shape = [N,N])
 
         D1 = kron(eye(N), D1)
@@ -272,24 +302,12 @@ class Reconstructor(Bhatt_Calculator):
         return y
 
 if __name__ == '__main__':
-    recon_params = Reconstruction_Params(momentum_im = 1,
-                                         sigma = 1e-2,
-                                         batch_size = 700,
-                                         alpha = 1,
-                                         beta = 2*1e2,
-                                         gfn_MC = 3,
-                                         threshold_gfn = 3.5905,
-                                         max_sparsity_gfn = 1000000,
-                                         reg_a = 2e-1,
-                                         reg_epsilon = 0.01,
-                                         method = 'quadrature',
-                                         verbose = True
-                                         )
-    im = Image('heart')
-    recon = Reconstructor(recon_params, 'TV', TV_weight = 1)
-    u = loadmat(os.path.join('images','u.mat'))['u']
-    rec_image = loadmat(os.path.join('images','Im.mat'))['Im']
-    im.update_image(rec_image) # Update the image
+    im = Image('cow')
+    recon = Reconstructor(cow_params_recon, 'TV', TV_weight = 1)
+    u = loadmat('u.mat')['u']
+    rec_im = loadmat('cow_im0.mat')['Im0']
+    im.update_image(rec_im) # Update the image
+
     new_im = recon.reconstruct(im, u)
     fig, axs = plt.subplots(1,2)
     axs[1].imshow(new_im)
