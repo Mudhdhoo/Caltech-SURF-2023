@@ -74,23 +74,13 @@ class Segmenter(Bhatt_Calculator):
     """
     def __init__(self, seg_params: Segmentation_Params) -> None:
         super().__init__(seg_params.threshold_seg, seg_params.Bhatt_MC, seg_params.max_sparsity_seg, seg_params.batch_size, seg_params.sigma, seg_params.method, seg_params.verbose)    # Bhattacharyya paramters
-
-       # self.image = image   # The image to segment
-        
+    
         # Flags
         self.method = seg_params.method
         self.dirac = seg_params.dirac
         self.verbose = seg_params.verbose
 
         # Segmentation Parameters
-       # self.u0 = self.init_u0()     
-
-        # Triangle 
-       # self.u0 = loadmat('u0')['u0'] #########
-
-        # Rectangle
-        #self.u0 = np.zeros([7,7]) 
-
         self.delta = seg_params.delta;     # stopping condition
         self.GL_epsilon = seg_params.GL_epsilon    # 4*1e-1; %1e0; %In Ginzburg--Landau
      
@@ -106,8 +96,8 @@ class Segmenter(Bhatt_Calculator):
 
         # Plotting
         self.dice_score = []
-       # self.fig, self.axs = plt.subplots(2,2)
-        self.fig = plt.figure()
+        self.fig, self.axs = plt.subplots(2,2)
+       # self.fig = plt.figure()
         self.iteration = 0
         plt.ion()       # Turn matplotlib interactive mode on
 
@@ -130,31 +120,20 @@ class Segmenter(Bhatt_Calculator):
         """
         Segments the given image using the modified MBO scheme.
         """
-
         dice_score = dice(u0, image.ground_truth)
         self.dice_score.append(dice_score)
         if plotting:
-            self.__render(u0, image,1)
-            self.__render(u0, image,0)
+            self.__render(u0, image)
+            self.__render(u0, image)
 
         u = self.__uupdate_MBO(u0, image, plotting)
         print('Finished Segmentation')
-    
-        #fig = plt.figure(figsize = (5,3))
-       # plt.imshow(u)
-      #  plt.title('Final Reconstruction', fontweight = 'bold', fontsize = 20)
-       # plt.axis('off')
-       #plt.savefig(f'/Users/johncao/Documents/Caltech_SURF_2023/Poster/Poster_images/recon.eps', bbox_inches='tight')
-      #  plt.xlabel('Iteration', fontsize = 15)
-       # plt.ylabel('Dice Score', fontsize = 15)
-       # plt.grid()
-       # plt.show()
         
         return u
 
     def __uupdate_MBO(self, u, image:Image, plotting):
         """
-        Implements the modified MBO scheme 
+        Implements the modified MBO scheme.
         """
         J = image.J
         u0 = u
@@ -200,7 +179,7 @@ class Segmenter(Bhatt_Calculator):
 
             # Render the segmentation
             if plotting:    
-                self.__render(u, image, i)
+                self.__render(u, image)
 
             # Stopping condition
             dist = np.sum(np.abs(u - u_old))
@@ -323,44 +302,48 @@ class Segmenter(Bhatt_Calculator):
         v[:,1:] = v[:,:-1]
         return v
 
-    def __render(self, u, image, iteration):
+    def __render(self, u, image):
         """
         Live rendering of the segmentation.
         """ 
-        # M, N = u.shape
-        # mask = np.ones_like(u) - u      # Create mask for plotting transparent region
-        # opaque_layer = np.zeros([M, N, 4])
-        # opaque_layer[:,:,0:3] = 0
-        # opaque_layer[:,:,3] = mask
+        M, N = u.shape
+        mask = np.ones_like(u) - u      # Create mask for plotting transparent region
+        opaque_layer = np.zeros([M, N, 4])
+        opaque_layer[:,:,0:3] = 0
+        opaque_layer[:,:,3] = mask
 
-        # self.axs[0,1].imshow(image.image)
-        # self.axs[0,1].imshow(opaque_layer, alpha = 0.5)
-        # self.axs[0,1].set_title('Segmentation')
+        self.axs[0,1].imshow(image.image)
+        self.axs[0,1].imshow(opaque_layer, alpha = 0.65)
+        self.axs[0,1].set_title('Segmentation')
     
-        # self.axs[0,0].imshow(image.image)
-        # self.axs[0,0].set_title('Reconstruction')
+        self.axs[0,0].imshow(image.image)
+        self.axs[0,0].set_title('Reconstruction')
 
-        # self.axs[1,0].plot(self.dice_score,'b')
-        # self.axs[1,0].set_title('Dice Score')
+        self.axs[1,0].plot(self.dice_score,'b')
+        self.axs[1,0].set_title('Dice Score')
 
-        # self.fig.canvas.draw()
-        # self.fig.canvas.flush_events()
+        self.axs[1,1].imshow(image.y)
+        self.axs[1,1].set_title('Observation y')
 
-        # self.fig.tight_layout()
-        # plt.show()
-
-       # plt.imshow(image.image)
-        rgb_u = np.zeros(image.image_size)
-        rgb_u[:,:,0] = u
-        rgb_u[:,:,1] = u
-        rgb_u[:,:,2] = u
-        plt.imshow(image.image[:,:,:]*rgb_u)
-       # plt.imshow(image.image*u)
-     #   plt.imshow(opaque_layer, alpha = 0.75)
-        plt.axis('off')
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+        self.fig.tight_layout()
         plt.show()
+
+       # plt.imshow(image.image)
+    #     rgb_u = np.zeros(image.image_size)
+    #     rgb_u[:,:,0] = u
+    #     rgb_u[:,:,1] = u
+    #     rgb_u[:,:,2] = u
+    #     plt.imshow(image.image[:,:,:]*rgb_u)
+
+    #    # plt.imshow(image.image*u)
+    #  #   plt.imshow(opaque_layer, alpha = 0.75)
+    #     plt.axis('off')
+    #     self.fig.canvas.draw()
+    #     self.fig.canvas.flush_events()
+    #     plt.show()
 
 if __name__ == '__main__':
     #im = loadmat(os.path.join('images','color_rect'))['color_rect']

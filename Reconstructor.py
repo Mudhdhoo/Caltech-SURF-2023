@@ -260,7 +260,6 @@ class Reconstructor(Bhatt_Calculator):
     def grad_channel(self,u, D1, D2, M, N):
         u = u.reshape(-1,1)
         return np.reshape(np.concatenate((D1@u, D2@u),1), [M, N, 2])
-        #return np.reshape(np.concatenate((D1@u, D2@u),1), [2, M, N])
 
     def div_channel(self,v, D1, D2, M, N):
         return np.reshape(D1.T @ np.reshape(v[:,:,0], [M*N, 1]) + D2.T @ np.reshape(v[:,:,1], [M*N, 1]), [M, N])
@@ -306,14 +305,15 @@ class Reconstructor(Bhatt_Calculator):
 
 if __name__ == '__main__':
     im = Image('cow')
+    y = im.image
     recon = Reconstructor(cow_params_recon, 'TV', TV_weight = 1)
     u = loadmat('u.mat')['u']
     rec_im = recon.cheap_reconstruction(im.image)
     im.update_image(rec_im) # Update the image
 
     new_im = recon.reconstruct(im, u)
-   # fig, axs = plt.subplots(1,2)
-    #axs[1].imshow(new_im)
-    #axs[0].imshow(im.image)
-    plt.imshow(new_im)
+    fig, axs = plt.subplots(1,2)
+    axs[1].imshow(new_im)
+    axs[0].imshow(y)
+
     plt.show()
