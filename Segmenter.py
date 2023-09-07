@@ -9,6 +9,7 @@ from Reconstructor import Reconstructor
 from Parameters import *
 from params import *
 from utils import dice
+
 plt.rcParams["font.family"] = "Times New Roman"
 
 class Segmenter(Bhatt_Calculator):
@@ -307,23 +308,27 @@ class Segmenter(Bhatt_Calculator):
         Live rendering of the segmentation.
         """ 
         M, N = u.shape
+
         mask = np.ones_like(u) - u      # Create mask for plotting transparent region
         opaque_layer = np.zeros([M, N, 4])
         opaque_layer[:,:,0:3] = 0
         opaque_layer[:,:,3] = mask
 
         self.axs[0,1].imshow(image.image)
+        self.axs[0,1].axis('off')
         self.axs[0,1].imshow(opaque_layer, alpha = 0.65)
         self.axs[0,1].set_title('Segmentation')
     
         self.axs[0,0].imshow(image.image)
+        self.axs[0,0].axis('off')
         self.axs[0,0].set_title('Reconstruction')
 
         self.axs[1,0].plot(self.dice_score,'b')
         self.axs[1,0].set_title('Dice Score')
 
         self.axs[1,1].imshow(image.y)
-        self.axs[1,1].set_title('Observation y')
+        self.axs[1,1].axis('off')
+        self.axs[1,1].set_title('Observation')
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()

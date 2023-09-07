@@ -1,7 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 from Segmenter import Segmenter
 from Reconstructor import Reconstructor
+from Contour_App import Contour_App
 from Image import Image
 from Parameters import *
 from params import *
@@ -27,13 +29,15 @@ class Joint_Optimizer:
         True for information output, False otherwise.
     """
 
-    def __init__(self, seg_params:Segmentation_Params, recon_params:Reconstruction_Params, image:Image, iterations:int, verbose = False, plotting = True) -> None:
+    def __init__(self, seg_params:Segmentation_Params, recon_params:Reconstruction_Params, u0, image, iterations:int, verbose = False, plotting = True) -> None:
         self.segmenter = Segmenter(seg_params)
         self.reconstructor = Reconstructor(recon_params, 'TV', TV_weight = 1)
-        self.image = image
+        self.contour_app = Contour_App()
         self.iterations = iterations
         self.verbose = verbose
         self.plotting = plotting
+        self.u0 = u0
+        self.image = image
 
     def run(self):
         """
@@ -44,17 +48,16 @@ class Joint_Optimizer:
             compute reconstruction based on segmentaion
             update image with new reconstruction
         """
+        # Initial contour & segmentation
+        # u0, image = self.contour_app.run()
 
         # Pre-processing cheap reconstruction
         y = self.image.image
         Im0 = self.reconstructor.cheap_reconstruction(y)
         self.image.update_image(Im0)
 
-        # Initial contour & segmentation
-        u0 = self.segmenter.init_u0(self.image)
-
         # Main optimization loop
-        u = u0
+        u = self.u0
         for iteration in range(0, self.iterations):
             if self.verbose:
                 print(f'Main loop iteration {iteration}')
@@ -69,7 +72,7 @@ class Joint_Optimizer:
 
 if __name__ == '__main__':
     image = Image('heart')
-    optimizer = Joint_Optimizer(heart_params_seg, recon_params, image, iterations = 5, verbose = True, plotting = True)
+    optimizer = Joint_Optimizer(heart_params_seg, heart_params_recon, image, iterations = 5, verbose = True, plotting = True)
     u, im = optimizer.run()
     plt.imshow(im)
     plt.show()

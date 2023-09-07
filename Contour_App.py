@@ -1,18 +1,22 @@
-from mimetypes import init
 import tkinter as tk
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import cv2
-import matplotlib.pyplot as plt
+matplotlib.use("TKAgg")
 
-class DrawingApp:
-    def __init__(self, root):
-        self.root = root
+class Contour_App:
+    """
+    GUI for creating a hand-drawn initial segmentation of the image.
+    """
+    def __init__(self):
+        self.root = tk.Tk()
         self.root.title("Initial Segmentation")
 
-        self.canvas = tk.Canvas(root, bg="white")
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas = tk.Canvas(self.root, bg = "white")
+        self.canvas.pack(fill = tk.BOTH, expand = True)
 
         self.canvas.bind("<Button-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw)
@@ -21,17 +25,22 @@ class DrawingApp:
         self.drawing = False
         self.points = []  # Store the points of the current contour
 
-        self.clear_button = tk.Button(root, text="Clear Canvas", command=self.clear_canvas)
+        self.clear_button = tk.Button(self.root, text = "Clear Canvas", command = self.clear_canvas)
         self.clear_button.pack()
 
-        self.load_image_button = tk.Button(root, text="Load Image", command=self.load_image)
+        self.load_image_button = tk.Button(self.root, text = "Load Image", command = self.load_image)
         self.load_image_button.pack()
 
-        self.return_button = tk.Button(root, text="Begin Segmentation", command=self.get_segmentation)
+        self.return_button = tk.Button(self.root, text = "Begin Segmentation", command = self.get_segmentation)
         self.return_button.pack()
 
         self.image = None
         self.image_id = None
+
+    def run(self):
+        self.root.mainloop()
+
+        return self.u0, self.image_array
 
     def start_drawing(self, event):
         self.drawing = True
@@ -44,7 +53,7 @@ class DrawingApp:
             x, y = event.x, event.y
             self.points.append((x, y))
             self.canvas.delete("current_contour")  # Clear the previous contour
-            self.canvas.create_polygon(self.points, fill="black", outline="black", tags="current_contour")
+            self.canvas.create_polygon(self.points, fill = '', outline = "magenta", tags = "current_contour", dash=(5,5))
 
     def stop_drawing(self, event):
         if self.drawing:
@@ -61,6 +70,7 @@ class DrawingApp:
         if file_path:
             self.clear_canvas()
             self.image = Image.open(file_path)
+            self.image_array = np.array(self.image)
             self.image = ImageTk.PhotoImage(self.image)
             self.image_id = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
             self.canvas.config(width=self.image.width(), height=self.image.height())
@@ -84,12 +94,12 @@ class DrawingApp:
                 # Fill the contour with black
                 cv2.fillPoly(segmentation, [np.array(coords).reshape((-1, 2))], (0, 0, 0))
 
-        self.output = segmentation
+        self.u0 = segmentation[:,:,0] < 1
+        self.u0 = self.u0.astype('int')
+        self.root.destroy()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = DrawingApp(root)
-    root.mainloop()
-    init_seg = app.output
-    plt.imshow(init_seg)
+    app = Contour_App()
+    init_seg, image = app.run()
+    plt.imshow(init_seg*image)
     plt.show()

@@ -14,7 +14,7 @@ class Image:
             image = loadmat(os.path.join('images',image))[image]
             self.image = image / np.max(image)       # Normalize image to [0,1]
         else:
-            self.image = image
+            self.image = image / np.max(image)
             
         self.image_size = self.image.shape
         self.color = False
