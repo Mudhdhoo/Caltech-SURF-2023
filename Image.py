@@ -29,7 +29,7 @@ class Image:
             self.image = self.build_y()
         self.make_feature_map()
         self.y = self.image
-        self.ground_truth = ground_truth
+        self.ground_truth = ground_truth / np.max(ground_truth)
 
         # Feature map parameters
         self.KER = KER

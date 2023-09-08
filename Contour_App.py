@@ -25,22 +25,26 @@ class Contour_App:
         self.drawing = False
         self.points = []  # Store the points of the current contour
 
-        self.clear_button = tk.Button(self.root, text = "Clear Canvas", command = self.clear_canvas)
-        self.clear_button.pack()
-
         self.load_image_button = tk.Button(self.root, text = "Load Image", command = self.load_image)
         self.load_image_button.pack()
+
+        self.load_truth_button = tk.Button(self.root, text = "Load Ground Truth", command = self.load_ground_truth)
+        self.load_truth_button.pack()
+
+        self.clear_button = tk.Button(self.root, text = "Clear Canvas", command = self.clear_canvas)
+        self.clear_button.pack()
 
         self.return_button = tk.Button(self.root, text = "Begin Segmentation", command = self.get_segmentation)
         self.return_button.pack()
 
         self.image = None
+        self.ground_truth = None
         self.image_id = None
 
     def run(self):
         self.root.mainloop()
 
-        return self.u0, self.image_array
+        return self.u0, self.image_array, self.ground_truth
 
     def start_drawing(self, event):
         self.drawing = True
@@ -74,6 +78,13 @@ class Contour_App:
             self.image = ImageTk.PhotoImage(self.image)
             self.image_id = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
             self.canvas.config(width=self.image.width(), height=self.image.height())
+            
+    def load_ground_truth(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.bmp *.ppm *.pgm *.pbm *.tiff *.tif")])
+        if file_path:
+           # self.clear_canvas()
+            self.ground_truth = Image.open(file_path)
+            self.ground_truth = np.array(self.ground_truth)
 
     def get_segmentation(self):
         if self.image:
@@ -100,6 +111,8 @@ class Contour_App:
 
 if __name__ == "__main__":
     app = Contour_App()
-    init_seg, image = app.run()
-    plt.imshow(init_seg*image)
+    init_seg, image, gt = app.run()
+    print(gt)
+    #plt.imshow(init_seg*image
+    plt.imshow(gt)
     plt.show()
