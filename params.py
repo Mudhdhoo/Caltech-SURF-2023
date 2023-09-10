@@ -15,10 +15,10 @@ heart_params_seg = Segmentation_Params(delta = 8,
                                     max_sparsity_seg = 2000000,
                                    # max_sparsity_seg = 1000000,
                                     batch_size = 700,
-                                    method = 'random',
+                                    method = 'quadrature',
                                     dirac = 0,
                                     verbose = True)
-                                    
+
 heart_params_recon = Reconstruction_Params(momentum_im = 1,
                                     sigma = 1e-2,
                                     batch_size = 700,
@@ -29,7 +29,7 @@ heart_params_recon = Reconstruction_Params(momentum_im = 1,
                                     max_sparsity_gfn = 1000000,
                                     reg_a = 2e-1,
                                     reg_epsilon = 0.01,
-                                    method = 'random',
+                                    method = 'quadrature',
                                     verbose = True
                                     )
 
@@ -53,9 +53,9 @@ brain_params_seg = Segmentation_Params(delta = 8,
 
 cow_params_seg = Segmentation_Params(delta = 8,
                                     GL_epsilon = 1,
-                                    steps = 100,
+                                    steps = 10,
                                     margin_proportion = 0.05,
-                                    maxiterations = 25,
+                                    maxiterations = 30,
                                     grad_Bhatt_MC = 10,
                                     Bhatt_MC = 10,#4
                                     sigma = 1e-2,
@@ -63,7 +63,7 @@ cow_params_seg = Segmentation_Params(delta = 8,
                                     gamma = 2*2*1e-2,#2*2*1e-2,
                                     momentum_u = 1e-3,
                                     threshold_seg = 0.01,
-                                    max_sparsity_seg = 25000000,
+                                    max_sparsity_seg = 2500000,
                                     batch_size = 700,
                                     method = 'random',
                                     dirac = 0,

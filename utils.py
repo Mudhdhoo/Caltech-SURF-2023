@@ -92,15 +92,20 @@ def dice(u, ground_truth):
 
     return dice
 
+def PSNR(im, image):
+    """
+    Computes the Peak Signal-to-Noise Ratio of "im" relative to "image".
+    """
+    MSE = 1/np.size(im) * np.sum((im - image)**2)
+    PSNR = 20*np.log10(np.max(image) / np.sqrt(MSE))
+
+    return PSNR
+
 if __name__ == '__main__':
-    def Z0_calculator(MC_iterations, q):
-        level_max = MC_iterations
-        point_num = sparse_grid_herm_size(q, level_max)
-        Z0, W0 = np.polynomial.hermite.hermgauss(point_num)
-        Z0 = Z0.reshape(-1,1)
-        W0 = W0.reshape(1,-1)
-        return Z0, W0
-    
-    Z0, W0 = Z0_calculator(1,3)
-    print(Z0)
+    a = np.array([[[1,2],[3,4]], [[1,2],[3,4]], [[1,2],[3,4]]])
+    b = np.array([[[1,2],[3,4]], [[1,2],[3,4.1]], [[1,2],[3,4]]])
+
+    print(PSNR(a,b))
+
+
 

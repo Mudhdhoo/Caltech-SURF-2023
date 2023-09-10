@@ -51,18 +51,10 @@ class Bhatt_Calculator:
         u_vec = u.reshape(n,1)
         Z0, W0 = self.Z0_calculator(self.Bhatt_MC, q)
 
-        #########################
-        #Z0 = loadmat('Z0_rand.mat')['Z0']
-        #########################
-
         if q > 1:
             indices = np.random.randint(0,int(n), [Z0.shape[0],1])     # Pick random indicies for Monte-Carlo sampling
         else:
             indices = np.random.randint(0,int(n), Z0.shape)
-
-        #########################
-       # indices = loadmat('indices_rand.mat')['indices']-1
-        #########################
 
         val = np.mean(np.sum(self.bhatt_integrand(J, u_vec, Z0, indices) * W0, 1),0)        # Sample h(J,u,x,Z) and take the mean to approximate integral
 
@@ -134,11 +126,6 @@ class Bhatt_Calculator:
             J_1nq = J.T    
         perm = np.random.permutation(nindex)
 
-        ###########################
-       # perm = loadmat('perm_rand.mat')['perm']-1
-       # perm = np.squeeze(perm,0)
-        ###########################
-
         for b in range(1,num_batches+1):
             # Get batch indices
             I_start = (b-1) * self.batch_size 
@@ -165,7 +152,7 @@ class Bhatt_Calculator:
             rows, cols = np.nonzero(KER_above_threshold)
             rows = np.expand_dims(rows[0:self.max_sparsity-count],1)
             cols = np.expand_dims(cols[0:self.max_sparsity-count],1)
-           # print(cols)
+
             # Convert to global indices
             rows = rows + I_start - 0 ########### -1?
             l = len(rows)
@@ -179,8 +166,8 @@ class Bhatt_Calculator:
                 if self.verbose:
                     print(f'Max sparsity reached at batch {b} of {num_batches}')
                 break
+            
         # Truncate if below max sparsity
-       
         sparsity = min(count,self.max_sparsity)
         ivec = np.int64(ivec[0:sparsity])
         jvec = np.int64(jvec[0:sparsity])

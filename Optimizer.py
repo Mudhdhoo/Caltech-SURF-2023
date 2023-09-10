@@ -62,13 +62,13 @@ class Joint_Optimizer:
             if self.verbose:
                 print(f'Main loop iteration {iteration}')
 
-            u = self.segmenter.segment(u, self.image, self.plotting)      # Perform segmentation
+            u, dice = self.segmenter.segment(u, self.image, self.plotting)      # Perform segmentation
             new_im = self.reconstructor.reconstruct(self.image, u)      # Perform reconstruction
             self.image.update_image(new_im)     # Update the reconstructed image
         
         plt.ioff()
 
-        return u, new_im
+        return u, self.u0, new_im, dice
 
 if __name__ == '__main__':
     image = Image('heart')

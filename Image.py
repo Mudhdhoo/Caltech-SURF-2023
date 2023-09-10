@@ -15,7 +15,7 @@ class Image:
             self.image = image / np.max(image)       # Normalize image to [0,1]
         else:
             self.image = image / np.max(image)
-            
+
         self.image_size = self.image.shape
         self.color = False
         if len(self.image_size) > 2:
@@ -27,15 +27,17 @@ class Image:
         self.is_binary = is_binary
         if build_y:
             self.image = self.build_y()
-        self.make_feature_map()
         self.y = self.image
-        self.ground_truth = ground_truth / np.max(ground_truth)
+        self.make_feature_map()
+        self.ground_truth = ground_truth
+        if type(ground_truth) == np.ndarray:
+            self.ground_truth = ground_truth / np.max(ground_truth)
 
         # Feature map parameters
         self.KER = KER
 
     def blur_image(self):
-        # TODO for reconstruction
+        # TODO 
         pass
 
     def noise_image(self, image):

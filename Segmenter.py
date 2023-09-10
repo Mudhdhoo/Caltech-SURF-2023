@@ -9,6 +9,8 @@ from Reconstructor import Reconstructor
 from Parameters import *
 from params import *
 from utils import dice
+from timeit import default_timer as timer
+from Contour_App import Contour_App
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -107,8 +109,8 @@ class Segmenter(Bhatt_Calculator):
         Creates the initial segmentation of the image.
         """
         M1, N1 = image.image_size[0], image.image_size[1] # 2D dimension of image
-        circle_center = np.array([M1/2, N1/3.5])  
-        circle_radius = N1/4.5 # Hardcoded atm, can change to be dynamic later
+        circle_center = np.array([M1/2.5, N1/2])  
+        circle_radius = N1/5 # Hardcoded atm, can change to be dynamic later
         phi0 = np.zeros([M1, N1])
         for i in range(0,M1):     # Iterate rows
             for j in range(0,N1):     # Iterate columns
@@ -130,7 +132,7 @@ class Segmenter(Bhatt_Calculator):
         u = self.__uupdate_MBO(u0, image, plotting)
         print('Finished Segmentation')
         
-        return u
+        return u, self.dice_score[-1]
 
     def __uupdate_MBO(self, u, image:Image, plotting):
         """
@@ -309,7 +311,8 @@ class Segmenter(Bhatt_Calculator):
         """ 
         M, N = u.shape
 
-        mask = np.ones_like(u) - u      # Create mask for plotting transparent region
+        # Create mask for plotting transparent region
+        mask = np.ones_like(u) - u    
         opaque_layer = np.zeros([M, N, 4])
         opaque_layer[:,:,0:3] = 0
         opaque_layer[:,:,3] = mask
@@ -351,16 +354,40 @@ class Segmenter(Bhatt_Calculator):
     #     plt.show()
 
 if __name__ == '__main__':
-    #im = loadmat(os.path.join('images','color_rect'))['color_rect']
-    #u0 = loadmat(os.path.join('images','color_rect_u0'))['u0']
+    contour_app = Contour_App()
+    u0, image, gt = contour_app.run()
+    im = Image(image, build_y = False, ground_truth = gt)
+    seg = Segmenter(cow_params_seg)         
 
-    seg = Segmenter(cow_params_seg)    
-    im = loadmat(os.path.join('images','cow'))['cow']
-    im = Image(im, build_y = False, scale = 1)
-    u0 = seg.init_u0(im)                                                                   
-    u = seg.segment(u0, im)
+    start = timer()                                                           
+    u, dice_score = seg.segment(u0, im, plotting = False)
+    end = timer()
 
-    # im = Image('heart', build_y = False)
-    # seg = Segmenter(heart_params_seg)   
-    # u0 = seg.init_u0(im)                                                                             
-    # u = seg.segment(u0, im)
+    print(f'Runtime: {end - start}')
+    print(f'Dice Score: {dice_score}')
+
+    M, N = u.shape
+    mask = np.ones_like(u) - u    
+    opaque_layer = np.zeros([M, N, 4])
+    opaque_layer[:,:,0:3] = 0
+    opaque_layer[:,:,3] = mask
+
+    fig1 = plt.figure()
+    plt.imshow(im.y)
+    plt.axis('off')
+    plt.imshow(opaque_layer, alpha = 0.65)
+    plt.title('Final Segmentation', fontweight = 'bold', fontsize = 18)
+    plt.savefig('./Results/cow_seg_noiseless.eps', bbox_inches='tight')
+
+    M, N = u0.shape
+    mask = np.ones_like(u0) - u0    
+    opaque_layer = np.zeros([M, N, 4])
+    opaque_layer[:,:,0:3] = 0
+    opaque_layer[:,:,3] = mask
+
+    fig2 = plt.figure()
+    plt.imshow(im.y)
+    plt.axis('off')
+    plt.imshow(opaque_layer, alpha = 0.65)
+    plt.title('Inital Segmentation', fontweight = 'bold', fontsize = 18)
+    plt.savefig('./Results/cow_u0_noiseless.eps', bbox_inches='tight')
