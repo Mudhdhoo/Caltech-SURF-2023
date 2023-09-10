@@ -6,3 +6,4 @@ plot_truth.py
 plot_y.py
 plot_image.py
 .DS_Store
+__pycache__
