@@ -1,5 +1,5 @@
 # Joint Reconstruction-Segmentation Using the Bhattacharyya Coefficient
-![test](/Results/cow_seg_noiseless.png)
+![test](/Results/cow_seg_joint.eps)
 ## Introduction
 The practical application of image segmentation is often accompanied by the problem of noisy, distorted
 images. Traditional sequential methods suffer from the loss of segmentation-relevant information after recon-
