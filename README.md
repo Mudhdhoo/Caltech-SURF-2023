@@ -19,6 +19,11 @@ To run the algorithm on the heart image: <br>
 1. Draw an initial segmentation around the heart by dragging the mouse on the image.
 1. Begin segmentation.
 
-Additional sets of hyper-parameters can be added in [params.py](https://github.com/Mudhdhoo/Caltech-SURF-2023/blob/master/Code/params.py). Number of iterations, noise levels, printing and plotting options are available in `/Code/run.py`.
+Additional sets of hyper-parameters can be added in [params.py](https://github.com/Mudhdhoo/Caltech-SURF-2023/blob/master/Code/params.py). Number of iterations, noise levels, printing and plotting options are available in [run.py](https://github.com/Mudhdhoo/Caltech-SURF-2023/blob/master/Code/run.py).
 
 ## Further Work
+Some directions for future work on this project include:
+- Implementing Gaussian quadrature sampling for RGB images.
+- Code for GPU computing.
+- Automatic parameter tuning.
+- Nicer looking interface.
