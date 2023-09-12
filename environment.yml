@@ -38,4 +38,3 @@ dependencies:
     - six==1.16.0
     - tifffile==2023.7.10
     - zipp==3.16.2
-prefix: /Users/johncao/opt/anaconda3/envs/Joint_recon_seg
