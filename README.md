@@ -1,5 +1,5 @@
 # Joint Reconstruction-Segmentation Using the Bhattacharyya Coefficient
-![test](/Results/github_image.png)
+![Segmentation and reconstruction of a noisy heart image](/Results/github_image.png)
 ## Introduction
 The practical application of image segmentation is often accompanied by the problem of noisy, distorted
 images. Traditional sequential methods suffer from the loss of segmentation-relevant information after recon-
@@ -11,5 +11,12 @@ an explicit reconstruction of the image. Joint reconstruction-segmentation is a 
 Install and activate the environment using conda: <br>
 `conda env create -f environment.yml` <br>
 `conda activate Joint_recon_seg`
+
+To run the algorithm on the heart image: <br>
+`python run.py` <br>
+1. Load the image using the GUI.
+1. Load the ground truth segmentation.
+1. Draw an initial segmentation around the heart by dragging the mouse on the image.
+1. Begin segmentation.
 
 ## Further Work
