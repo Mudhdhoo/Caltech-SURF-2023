@@ -4,7 +4,6 @@ import numpy as np
 from Optimizer import Joint_Optimizer
 from params import *
 from Image import Image
-from timeit import default_timer as timer
 from Contour_App import Contour_App
 
 plt.rcParams["font.family"] = "Times New Roman"
@@ -16,13 +15,9 @@ if __name__ == '__main__':
     
     image = Image(image0, ground_truth = gt, noise_std = 0.15)      # Create image instance
 
-    optimizer = Joint_Optimizer(cow_params_seg, cow_params_recon, u0, image, iterations = 3, verbose = True, plotting = False)      # Create optimizer instance
+    optimizer = Joint_Optimizer(heart_params_seg, heart_params_recon, u0, image, iterations = 3, verbose = True, plotting = True)      # Create optimizer instance
     
-    start = timer()
     u, u0, im, dice = optimizer.run()   # Run optimizer
-    end = timer()
-
-    print(f'Runtime: {end - start}')  
 
     M, N = u.shape
     mask = np.ones_like(u) - u    

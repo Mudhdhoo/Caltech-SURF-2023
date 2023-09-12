@@ -90,7 +90,7 @@ class Reconstructor(Bhatt_Calculator):
             is_rgb = False
 
         if self.algorithm == 'TV':
-            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight, multichannel = is_rgb)
+            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight) #multichannel = is_rgb)
 
         if self.algorithm == 'TGV':
             pass

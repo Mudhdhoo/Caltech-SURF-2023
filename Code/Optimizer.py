@@ -1,3 +1,4 @@
+from tabnanny import verbose
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -7,6 +8,7 @@ from Contour_App import Contour_App
 from Image import Image
 from Parameters import *
 from params import *
+from timeit import default_timer as timer
 
 class Joint_Optimizer:
     """
@@ -48,9 +50,7 @@ class Joint_Optimizer:
             compute reconstruction based on segmentaion
             update image with new reconstruction
         """
-        # Initial contour & segmentation
-        # u0, image = self.contour_app.run()
-
+        start = timer()
         # Pre-processing cheap reconstruction
         y = self.image.image
         Im0 = self.reconstructor.cheap_reconstruction(y)
@@ -66,6 +66,11 @@ class Joint_Optimizer:
             new_im = self.reconstructor.reconstruct(self.image, u)      # Perform reconstruction
             self.image.update_image(new_im)     # Update the reconstructed image
         
+        end = timer()
+
+        if verbose:
+            print(f'Runtime: {end - start}')
+
         plt.ioff()
 
         return u, self.u0, new_im, dice
