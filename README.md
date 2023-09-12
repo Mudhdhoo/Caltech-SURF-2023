@@ -8,7 +8,7 @@ an explicit reconstruction of the image. Joint reconstruction-segmentation is a 
 
 ## Usage
 
-Install and activate the environment using conda:
+Install and activate the environment using conda: <br>
 `conda env create -f environment.yml`
 `conda activate Joint_recon_seg`
 
