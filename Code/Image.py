@@ -11,7 +11,7 @@ class Image:
     def __init__(self, image, scale = 1, blur = 0, noise_std = 0.15, blur_std = 0.4, is_grey = 0, is_binary = 0, KER = 1, build_y = True, ground_truth = None) -> None:
         # Image set-up
         if type(image) == str:
-            image = loadmat(os.path.join('images',image))[image]
+            image = loadmat(os.path.join('./Code/images',image))[image]
             self.image = image / np.max(image)       # Normalize image to [0,1]
         else:
             self.image = image / np.max(image)

@@ -1,3 +1,4 @@
+from subprocess import check_call
 import numpy as np
 import matplotlib.pyplot as plt 
 import os
@@ -85,12 +86,12 @@ class Reconstructor(Bhatt_Calculator):
         """
         Cheap initial reconstruction of the image. 
         """
-        is_rgb = True
-        if len(y.shape) == 2:
-            is_rgb = False
+        channel_axis = None
+        if len(y.shape) == 3:
+            channel_axis = 2
 
         if self.algorithm == 'TV':
-            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight) #multichannel = is_rgb)
+            denoised_im = denoise_tv_chambolle(y, weight = self.TV_weight, channel_axis = channel_axis)
 
         if self.algorithm == 'TGV':
             pass

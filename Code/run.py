@@ -15,7 +15,7 @@ if __name__ == '__main__':
     
     image = Image(image0, ground_truth = gt, noise_std = 0.15)      # Create image instance
 
-    optimizer = Joint_Optimizer(heart_params_seg, heart_params_recon, u0, image, iterations = 3, verbose = True, plotting = True)      # Create optimizer instance
+    optimizer = Joint_Optimizer(cow_params_seg, cow_params_recon, u0, image, iterations = 3, verbose = True, plotting = True)      # Create optimizer instance
     
     u, u0, im, dice = optimizer.run()   # Run optimizer
 
