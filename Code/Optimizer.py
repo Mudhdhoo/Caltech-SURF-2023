@@ -67,7 +67,7 @@ class Joint_Optimizer:
         
         end = timer()
 
-        if verbose:
+        if self.verbose:
             print(f'Runtime: {end - start}')
 
         plt.ioff()
