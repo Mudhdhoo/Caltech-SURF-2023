@@ -191,18 +191,3 @@ class Bhatt_Calculator:
 
         return P1, P2
 
-    def find_nonzero(self, mat):
-        """
-        Returns the indices of non-zero elements of a matrix.
-        """
-        m,n = mat.shape
-        rows = []
-        cols= []
-        for i in range(0,n):
-            column = mat[:,i]
-            for j, val in enumerate(column):
-                if val != 0:
-                    rows.append(j)
-                    cols.append(i)
-
-        return np.array(rows), np.array(cols)
