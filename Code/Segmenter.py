@@ -263,12 +263,13 @@ class Segmenter(Bhatt_Calculator):
         MC, q = Z0.shape
         n = J.shape[0]
         nindex = len(indices)
-        P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
+        #P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)     # Calculate P1 and P2
+        P1_Z, P2_Z = self.Pcalculator_sparse3(J, u_vec, Z0, indices)     # Calculate P1 and P2
         fout = 0.5 * (1/V2 * np.sqrt( np.maximum(P1_Z/(P2_Z + 1e-8),0) ) - 1/V1 * np.sqrt( np.maximum(P2_Z / (P1_Z + 1e-8),0) ))
 
         return fout
 
-    def __margin_finder(self, v, proportion):
+    def __margin_finder(self, v, proportion, tolerance=1e-4):
         """
         Finds the x such that the number of pixels that has a distance to 0.5 less than x is almost
         equal to some proportion of the pixels, i.e find |sum( abs(v-0.5) < x,'all') - proportion * numel(v)| < 10.
@@ -276,13 +277,13 @@ class Segmenter(Bhatt_Calculator):
         """
         N = np.size(v)
         v = v.reshape(N,1) - 0.5
-        phi = abs(v)
+        phi = np.abs(v)
         MAX = 0.5
         MIN = 0
         for _ in range(1, 1000 + 1):
             margin = (MIN + MAX)/2
-            val = sum(phi < margin) - proportion * N
-            if abs(val) < 10:
+            val = np.mean(phi < margin) - proportion
+            if np.abs(val) < tolerance:
                 break
             if val > 0:
                 MAX = margin

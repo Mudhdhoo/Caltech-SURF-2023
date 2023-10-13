@@ -132,7 +132,8 @@ class Reconstructor(Bhatt_Calculator):
         indices = np.arange(0, n).reshape(-1,1)
 
         # Evaluate distributions P1,P2, output is n x MC
-        P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)
+        #P1_Z, P2_Z = self.Pcalculator_sparse2(J, u_vec, Z0, indices)
+        P1_Z, P2_Z = self.Pcalculator_sparse3(J, u_vec, Z0, indices)
 
         # Find indices where u[indices] == 0
         u_index_0 = np.where(u_vec == 0)[0]
